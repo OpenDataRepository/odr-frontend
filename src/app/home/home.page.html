@@ -13,8 +13,106 @@
     </ion-toolbar>
   </ion-header>
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+  <div class="container">
+    <form (ngSubmit)="fetchRecord()" #singleRecordForm="ngForm">
+      <ion-grid>
+        <ion-row>
+          <ion-col>
+            <ion-item>
+              <ion-label position="floating">Record uuid</ion-label>
+              <ion-input type="text" ngModel name="uuid" required></ion-input>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col>
+            <ion-button type="submit" color="primary" expand="block" [disabled]="!singleRecordForm.valid">Fetch record</ion-button>
+          </ion-col>
+        </ion-row>
+        <ion-row *ngIf="fetchedRecord">
+          <ion-col>
+            <ion-item>
+              <ion-label class="ion-text-wrap">
+                {{ fetchedRecord }}
+              </ion-label>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </form>
+  </div>
+
+  <div class="container">
+    <form (ngSubmit)="fetchPublishedRecords()" #publishedRecordsForm="ngForm">
+      <ion-grid>
+        <ion-row>
+          <ion-col>
+            <ion-item>
+              <ion-label position="floating">Dataset uuid</ion-label>
+              <ion-input type="text" ngModel name="uuid" required></ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-label position="floating">Published dataset version name</ion-label>
+              <ion-input type="text" ngModel name="version_name" required></ion-input>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col>
+            <ion-button type="submit" color="primary" expand="block" [disabled]="!publishedRecordsForm.valid">Fetch published dataset records</ion-button>
+          </ion-col>
+        </ion-row>
+        <ion-row *ngIf="fetchedDatasetRecords">
+          <ion-col>
+            <ion-item>
+              <ion-label class="ion-text-wrap">
+                {{ fetchedDatasetRecords }}
+              </ion-label>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </form>
+  </div>
+
+  <div class="container">
+    <form (ngSubmit)="searchPublishedRecords()" #searchRecordsForm="ngForm">
+      <ion-grid>
+        <ion-row>
+          <ion-col>
+            <ion-item>
+              <ion-label position="floating">Dataset uuid</ion-label>
+              <ion-input type="text" ngModel name="uuid" required></ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-label position="floating">Published dataset version name</ion-label>
+              <ion-input type="text" ngModel name="version_name" required></ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-label position="floating">Search key</ion-label>
+              <ion-input type="text" ngModel name="key"></ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-label position="floating">Search value</ion-label>
+              <ion-input type="text" ngModel name="value"></ion-input>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col>
+            <ion-button type="submit" color="primary" expand="block" [disabled]="!searchRecordsForm.valid">Search published dataset records</ion-button>
+          </ion-col>
+        </ion-row>
+        <ion-row *ngIf="searchedDatasetRecords">
+          <ion-col>
+            <ion-item>
+              <ion-label class="ion-text-wrap">
+                {{ searchedDatasetRecords }}
+              </ion-label>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </form>
   </div>
 </ion-content>
