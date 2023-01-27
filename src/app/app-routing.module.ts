@@ -11,6 +11,10 @@ const routes: Routes = [
     redirectTo: 'home',
     pathMatch: 'full'
   },
+  {
+    path: 'new-dataset',
+    loadChildren: () => import('./new-dataset/new-dataset.module').then( m => m.NewDatasetPageModule)
+  },
 ];
 
 @NgModule({
