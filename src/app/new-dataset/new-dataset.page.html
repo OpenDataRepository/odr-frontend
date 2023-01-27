@@ -5,58 +5,7 @@
 </ion-header>
 
 <ion-content>
-  <!-- <ion-item>Fields: </ion-item>
-  <ion-list>
-    <app-field *ngFor="let field of fields"></app-field>
-  </ion-list>
-  <ion-item>
-    <ion-button (click)="addField()">Add Field</ion-button>
-  </ion-item> -->
-
-  <form [formGroup]="new_dataset_form">
-    <div class="ion-margin border" formArrayName="fields">
-      <ion-item>
-        <h3>Fields:</h3>
-      </ion-item>
-      <div class="ion-margin border" *ngFor="let fieldForm of fields.controls; let i = index">
-        <form [formGroup]="$castToFieldGroup(fieldForm)">
-          <ion-item>
-            <ion-label>Name</ion-label>
-            <ion-input formControlName="title" placeholder="Enter name here..."></ion-input>
-          </ion-item>
-          <ion-item>
-            <ion-label>Description</ion-label>
-            <ion-input formControlName="description" placeholder="Enter description here..."></ion-input>
-          </ion-item>
-          <ion-item>
-            <ion-button (click)="deleteField(i)">Delete Field</ion-button>
-          </ion-item>
-        </form>
-      </div>
-      <ion-item>
-        <ion-button (click)="addField()">New Field</ion-button>
-      </ion-item>
-    </div>
-
-    <div class="ion-margin border" formArrayName="related_datasets">
-      <ion-item>
-        <h3>Related Datasets:</h3>
-      </ion-item>
-      <div class="ion-margin border" *ngFor="let dataset_form of related_datasets.controls; let i = index">
-        <form [formGroup]="$castToFieldGroup(dataset_form)">
-          <ion-item>Nothing yet</ion-item>
-          <ion-item>
-            <ion-button (click)="deleteDataset(i)">Delete Dataset</ion-button>
-          </ion-item>
-        </form>
-      </div>
-      <ion-item>
-        <ion-button (click)="addDataset()">New Dataset</ion-button>
-      </ion-item>
-    </div>
-
-  </form>
-
+  <app-dataset [is_top_level_dataset]="true"></app-dataset>
 </ion-content>
 
 <ion-footer>

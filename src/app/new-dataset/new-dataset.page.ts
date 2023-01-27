@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Field } from './field/field.model';
 
 @Component({
   selector: 'app-new-dataset',

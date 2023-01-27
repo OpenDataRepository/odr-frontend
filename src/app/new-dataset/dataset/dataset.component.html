@@ -1,0 +1,29 @@
+<form class="ion-margin border" [formGroup]="form">
+
+  <div class="ion-margin border" formArrayName="fields">
+    <ion-item>Fields:</ion-item>
+    <app-field *ngFor="let f of fields_form_array?.controls; index as j"
+        (remove)="deleteField(j)"
+        [formControlName]="j">
+    </app-field>
+    <ion-item>
+      <ion-button (click)="addField()">New Field</ion-button>
+    </ion-item>
+  </div>
+
+  <div class="ion-margin border" formArrayName="related_datasets">
+    <ion-item>Related Datasets:</ion-item>
+    <app-dataset *ngFor="let d of related_datasets_form_array?.controls; index as i"
+                        (remove)="deleteRelatedDataset(i)"
+                        [formControlName]="i">
+    </app-dataset>
+    <ion-item>
+      <ion-button (click)="addRelatedDataset()">New Dataset</ion-button>
+    </ion-item>
+  </div>
+
+  <ion-item *ngIf="!is_top_level_dataset">
+    <ion-button (click)="remove.emit()">Delete Dataset</ion-button>
+  </ion-item>
+
+</form>
