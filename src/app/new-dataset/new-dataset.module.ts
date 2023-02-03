@@ -9,6 +9,7 @@ import { NewDatasetPageRoutingModule } from './new-dataset-routing.module';
 import { NewDatasetPage } from './new-dataset.page';
 import { DatasetComponent } from './dataset/dataset.component';
 import { FieldComponent } from './field/field.component';
+import { HeaderModule } from '../header/header.module';
 
 @NgModule({
   imports: [
@@ -16,7 +17,8 @@ import { FieldComponent } from './field/field.component';
     FormsModule,
     IonicModule,
     NewDatasetPageRoutingModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    HeaderModule
   ],
   declarations: [NewDatasetPage, DatasetComponent, FieldComponent]
 })

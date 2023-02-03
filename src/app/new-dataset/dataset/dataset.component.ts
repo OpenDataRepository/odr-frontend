@@ -19,6 +19,7 @@ export class DatasetComponent implements OnInit {
   constructor(private _fb: FormBuilder) {
 
     this.form = this._fb.group({
+      name: null,
       fields: this._fb.array([]),
       related_datasets: this._fb.array([])
     });

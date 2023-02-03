@@ -1,14 +1,18 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { NgForm } from '@angular/forms';
 import { environment } from 'src/environments/environment';
+import { ViewWillEnter } from '@ionic/angular';
+import { HeaderComponent } from '../header/header.component';
 
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
 })
-export class HomePage {
+export class HomePage implements OnInit, ViewWillEnter {
+
+  @ViewChild(HeaderComponent) header: HeaderComponent|undefined;
 
   @ViewChild('singleRecordForm') singleRecordForm: NgForm|undefined;
   private _fetchedRecord: object|undefined;
@@ -32,6 +36,16 @@ export class HomePage {
   }
 
   constructor(private http: HttpClient) {}
+
+  ngOnInit(): void {
+    console.log('home page oninit called');
+  }
+  ionViewWillEnter() {
+    console.log('home page ionViewWillEnter called');
+    this.header?.reloadAuthorized();
+  }
+
+
 
   fetchRecord() {
     const uuid = this.singleRecordForm?.value['uuid'];

@@ -1,9 +1,4 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-title>new_dataset</ion-title>
-  </ion-toolbar>
-</ion-header>
-
+<app-header></app-header>
 <ion-content>
   <app-dataset [is_top_level_dataset]="true"></app-dataset>
 </ion-content>
@@ -16,7 +11,7 @@
           <ion-button expand="block">Save Draft</ion-button>
         </ion-col>
         <ion-col>
-          <ion-button expand="block">Cancel</ion-button>
+          <ion-button expand="block" color="danger">Cancel</ion-button>
         </ion-col>
       </ion-row>
     </ion-grid>

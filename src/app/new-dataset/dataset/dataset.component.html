@@ -1,5 +1,8 @@
 <form class="ion-margin border" [formGroup]="form">
-
+  <ion-item>
+    <ion-label>Name</ion-label>
+    <ion-input formControlName="name" placeholder="Enter name here..."></ion-input>
+  </ion-item>
   <div class="ion-margin border" formArrayName="fields">
     <ion-item>Fields:</ion-item>
     <app-field *ngFor="let f of fields_form_array?.controls; index as j"
@@ -23,7 +26,7 @@
   </div>
 
   <ion-item *ngIf="!is_top_level_dataset">
-    <ion-button (click)="remove.emit()">Delete Dataset</ion-button>
+    <ion-button (click)="remove.emit()" color="danger">Delete Dataset</ion-button>
   </ion-item>
 
 </form>

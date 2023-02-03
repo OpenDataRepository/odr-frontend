@@ -1,14 +1,12 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { AuthGuard } from '../auth.guard';
 
-import { NewDatasetPage } from './new-dataset.page';
+import { LogInPage } from './log-in.page';
 
 const routes: Routes = [
   {
     path: '',
-    component: NewDatasetPage,
-    canMatch: [AuthGuard]
+    component: LogInPage
   }
 ];
 
@@ -16,4 +14,4 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule],
 })
-export class NewDatasetPageRoutingModule {}
+export class LogInPageRoutingModule {}

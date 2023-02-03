@@ -15,6 +15,14 @@ const routes: Routes = [
     path: 'new-dataset',
     loadChildren: () => import('./new-dataset/new-dataset.module').then( m => m.NewDatasetPageModule)
   },
+  {
+    path: 'sign-up',
+    loadChildren: () => import('./sign-up/sign-up.module').then( m => m.SignUpPageModule)
+  },
+  {
+    path: 'log-in',
+    loadChildren: () => import('./log-in/log-in.module').then( m => m.LogInPageModule)
+  },
 ];
 
 @NgModule({

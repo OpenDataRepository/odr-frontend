@@ -1,13 +1,13 @@
 <form class="ion-margin border" [formGroup]="form">
   <ion-item>
     <ion-label>Name</ion-label>
-    <ion-input formControlName="title" placeholder="Enter name here..."></ion-input>
+    <ion-input formControlName="name" placeholder="Enter name here..."></ion-input>
   </ion-item>
   <ion-item>
     <ion-label>Description</ion-label>
     <ion-input formControlName="description" placeholder="Enter description here..."></ion-input>
   </ion-item>
   <ion-item>
-    <ion-button (click)="remove.emit()">Delete Field</ion-button>
+    <ion-button (click)="remove.emit()" color="danger">Delete Field</ion-button>
   </ion-item>
 </form>
