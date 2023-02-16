@@ -1,5 +1,5 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-field',
@@ -8,18 +8,16 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 })
 export class FieldComponent implements OnInit {
 
+  @Input()
+  form: FormGroup|any;
+
   @Output()
   remove: EventEmitter<void> = new EventEmitter<void>();
 
-  form: FormGroup;
-
-  constructor(private _fb: FormBuilder) {
-    this.form = this._fb.group({
-      name: null,
-      description: null
-    });
-  }
+  constructor() {}
 
   ngOnInit() {}
+
+  get name() { return this.form.get('name'); }
 
 }

@@ -1,0 +1,27 @@
+<div class="ion-margin border">
+  <ion-item lines="inset">
+    <ion-label>Name: {{ dataset.name }}</ion-label>
+  </ion-item>
+
+  <ion-item lines="none">Fields:</ion-item>
+  <div class="ion-margin">
+    <div *ngFor="let f of dataset?.fields">
+      <div class="ion-margin border">
+        <ion-item lines="inset">
+          <ion-label>Name: {{ f.name }}</ion-label>
+        </ion-item>
+        <ion-item lines="inset">
+          <ion-label>Description: {{ f.description }}</ion-label>
+        </ion-item>
+      </div>
+    </div>
+  </div>
+
+  <ion-item lines="none">Related Datasets:</ion-item>
+  <div class="ion-margin">
+    <div *ngFor="let d of dataset?.related_datasets">
+      <dataset-view [dataset]="d"></dataset-view>
+    </div>
+  </div>
+
+</div>

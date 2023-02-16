@@ -15,11 +15,9 @@ export class AuthGuard implements CanMatch {
     route: Route,
     segments: UrlSegment[]
   ): Observable<boolean> | Promise<boolean> | boolean {
-    console.log('auth guard triggered');
     return this.authService.userIsAuthenticated.pipe(
       take(1),
       switchMap((isAuthenticated) => {
-        console.log('in authguard: isAuthenticated = ' + isAuthenticated);
         if (!isAuthenticated) {
           return this.authService.autoLogin();
         } else {
@@ -27,7 +25,6 @@ export class AuthGuard implements CanMatch {
         }
       }),
       tap(isAuthenticated => {
-        console.log('after autologin: isAuthenticated = ' + isAuthenticated);
         if (!isAuthenticated) {
           this.router.navigateByUrl('/log-in');
         }

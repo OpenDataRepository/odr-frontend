@@ -33,7 +33,6 @@ export class AuthService {
   }
 
   login(email: string, password: string) {
-    console.log('login called');
     return this.http
       .post(
         environment.backend_url +  '/account/login',
@@ -120,10 +119,8 @@ export class AuthService {
   }
 
   get userIsAuthenticated() {
-    console.log('userIsAuthenticated called');
     return this.userEmitter.asObservable().pipe(
       map(user => {
-        console.log(user);
         if (user) {
           return !!user.token;
         } else {

@@ -22,10 +22,8 @@ export class LogInPage implements OnInit {
     const email = form.value.email;
     const password = form.value.password;
 
-    console.log("signing up with email " + email + " and password " + password);
     let obs = this.authService.login(email, password);
     obs.subscribe(resData => {
-      console.log("Result of loggin in: "); console.log(resData);
       this.router.navigateByUrl('/');
     })
   }

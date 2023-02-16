@@ -19,7 +19,6 @@ export class HeaderComponent implements OnInit{
   }
 
   reloadAuthorized() {
-    console.log('header componenet ionViewWillEnter called');
     this.auth.userIsAuthenticated.subscribe(result => this.isLoggedIn = result);
     if(this.isLoggedIn) {
       this.auth.email.subscribe(result => this.email = result);

@@ -241,3 +241,10 @@
   border-style: solid;
   border-radius: 3px;
 }
+
+.invalid-border {
+  border-color: var(--ion-color-danger);
+  border-width: thin;
+  border-style: solid;
+  border-radius: 3px;
+}

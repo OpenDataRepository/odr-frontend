@@ -38,10 +38,9 @@ export class HomePage implements OnInit, ViewWillEnter {
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
-    console.log('home page oninit called');
+
   }
   ionViewWillEnter() {
-    console.log('home page ionViewWillEnter called');
     this.header?.reloadAuthorized();
   }
 
@@ -49,7 +48,6 @@ export class HomePage implements OnInit, ViewWillEnter {
 
   fetchRecord() {
     const uuid = this.singleRecordForm?.value['uuid'];
-    console.log('fetch record called with uuid: ' + uuid);
     this.http.get(environment.backend_url +  '/record/' + uuid + '/latest_persisted')
       .subscribe(response => {
         this._fetchedRecord = response;
@@ -59,7 +57,6 @@ export class HomePage implements OnInit, ViewWillEnter {
   fetchPublishedRecords() {
     const uuid = this.publishedRecordsForm?.value['uuid'];
     const version_name = this.publishedRecordsForm?.value['version_name'];
-    console.log('fetch dataset called with uuid ' + uuid + ' and version name ' + version_name);
     this.http.get('http://localhost:3000/dataset/' + uuid + '/published/' + version_name + '/records')
       .subscribe(response => {
         this._fetchedDatasetRecords = response;
@@ -71,8 +68,6 @@ export class HomePage implements OnInit, ViewWillEnter {
     const version_name = this.searchRecordsForm?.value['version_name'];
     const key = this.searchRecordsForm?.value['key'];
     const value = this.searchRecordsForm?.value['value'];
-    console.log('search dataset called with uuid ' + uuid + ' and version name ' + version_name
-      + " and key " + key + " and value " + value);
     let url = 'http://localhost:3000/dataset/' + uuid + '/published/' + version_name + '/search_records';
     if(key && value) {
       url += "?" + key + "=" + value;

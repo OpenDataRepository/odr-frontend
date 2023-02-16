@@ -1,17 +1,17 @@
 <app-header></app-header>
 <ion-content>
-  <app-dataset [is_top_level_dataset]="true"></app-dataset>
+  <dataset-edit [is_top_level_dataset]="true"></dataset-edit>
 </ion-content>
 
 <ion-footer>
   <ion-toolbar>
     <ion-grid>
       <ion-row class="ion-text-center">
-        <ion-col>
-          <ion-button expand="block">Save Draft</ion-button>
+        <ion-col on-mouseover='displayFormProblems()'>
+          <ion-button expand="block" (click)="saveDraft()" [disabled]="!dataset_component.form?.valid">Save Draft</ion-button>
         </ion-col>
         <ion-col>
-          <ion-button expand="block" color="danger">Cancel</ion-button>
+          <ion-button expand="block" color="danger" (click)="exitEditMode()">Exit Edit Mode</ion-button>
         </ion-col>
       </ion-row>
     </ion-grid>

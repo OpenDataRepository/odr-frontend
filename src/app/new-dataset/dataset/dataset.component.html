@@ -1,26 +1,32 @@
-<form class="ion-margin border" [formGroup]="form">
-  <ion-item>
-    <ion-label>Name</ion-label>
+<form class="ion-margin" [ngClass]="{'border': form.valid, 'invalid-border': !form.valid}" [formGroup]="form">
+  <ion-item lines="inset">
+    <ion-label>Name:</ion-label>
     <ion-input formControlName="name" placeholder="Enter name here..."></ion-input>
+    <ion-note slot="error">Name is required</ion-note>
   </ion-item>
-  <div class="ion-margin border" formArrayName="fields">
-    <ion-item>Fields:</ion-item>
-    <app-field *ngFor="let f of fields_form_array?.controls; index as j"
-        (remove)="deleteField(j)"
-        [formControlName]="j">
-    </app-field>
-    <ion-item>
+
+  <ion-item lines="none">Fields:</ion-item>
+  <div class="ion-margin" formArrayName="fields">
+    <div *ngFor="let f of fields_form_array?.controls; index as j">
+      <app-field
+          [form]="f"
+          (remove)="deleteField(j)">
+      </app-field>
+    </div>
+    <ion-item lines="none">
       <ion-button (click)="addField()">New Field</ion-button>
     </ion-item>
   </div>
 
-  <div class="ion-margin border" formArrayName="related_datasets">
-    <ion-item>Related Datasets:</ion-item>
-    <app-dataset *ngFor="let d of related_datasets_form_array?.controls; index as i"
-                        (remove)="deleteRelatedDataset(i)"
-                        [formControlName]="i">
-    </app-dataset>
-    <ion-item>
+  <ion-item lines="none">Related Datasets:</ion-item>
+  <div class="ion-margin" formArrayName="related_datasets">
+    <div *ngFor="let f of related_datasets_form_array?.controls; index as i">
+      <dataset-edit
+          [form]="f"
+          (remove)="deleteRelatedDataset(i)">
+      </dataset-edit>
+    </div>
+    <ion-item lines="none">
       <ion-button (click)="addRelatedDataset()">New Dataset</ion-button>
     </ion-item>
   </div>

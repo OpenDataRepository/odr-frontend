@@ -23,6 +23,14 @@ const routes: Routes = [
     path: 'log-in',
     loadChildren: () => import('./log-in/log-in.module').then( m => m.LogInPageModule)
   },
+  {
+    path: 'dataset-view',
+    loadChildren: () => import('./dataset-view/dataset-view.module').then( m => m.DatasetViewPageModule)
+  },
+  {
+    path: '**',
+    loadChildren: () => import('./not-found/not-found.module').then( m => m.NotFoundPageModule)
+  }
 ];
 
 @NgModule({

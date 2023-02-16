@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
+import { DatasetComponent } from './dataset/dataset.component';
 
 @Component({
   selector: 'app-new-dataset',
@@ -8,58 +9,47 @@ import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 })
 export class NewDatasetPage implements OnInit {
 
-  // public fields: Field[] = [];
+  @ViewChild(DatasetComponent, { static: true }) dataset_component!: DatasetComponent;
 
-  new_dataset_form = this.fb.group({
-    fields: this.fb.array([]),
-    related_datasets: this.fb.array([])
-  });
-
-  constructor(private fb: FormBuilder) { }
+  constructor(private router: Router) { }
 
   ngOnInit() {
   }
 
-  // TODO: add method to add a related_dataset form to a dataset form
+  exitEditMode() {
+    const uuid = this.dataset_component.form.controls['dataset_uuid'].value;
+    if(uuid) {
+      this.router.navigateByUrl('/dataset-view/' + uuid);
+    } else {
+      this.router.navigateByUrl('/');
+    }
+  }
 
-  addField() {
-    const form = this.fb.group({
-        name: ['', Validators.required],
-        description: ['']
+  saveDraft() {
+    console.log('save button pressed');
+    this.dataset_component.saveDraft().subscribe(() => {
+      this.exitEditMode();
     });
-
-    this.fields.push(form);
   }
 
 
-  deleteField(index: number) {
-    this.fields.removeAt(index);
+  displayFormProblems() {
+    if(this.dataset_component.form.valid) {
+      return;
+    }
+    console.log('form invalid. invalid controls are: ');
+    console.log(this.findInvalidControls());
+    console.log(this.dataset_component.form.status);
   }
 
-  get fields() {
-    return this.new_dataset_form.controls["fields"] as FormArray;
+  private findInvalidControls() {
+    const invalid = [];
+    const controls = this.dataset_component.form.controls;
+    for (const name in controls) {
+        if (!controls[name].valid) {
+            invalid.push(name);
+        }
+    }
+    return invalid;
   }
-
-  addDataset() {
-    const form = this.fb.group({
-
-    });
-
-    this.related_datasets.push(form);
-  }
-
-
-  deleteDataset(index: number) {
-    this.related_datasets.removeAt(index);
-  }
-
-  get related_datasets() {
-    return this.new_dataset_form.controls["related_datasets"] as FormArray;
-  }
-
-  castTo<T>(): (x: any) => T {
-    return (x) => x as T
-  }
-  $castToFieldGroup = this.castTo<FormGroup>();
-
 }
