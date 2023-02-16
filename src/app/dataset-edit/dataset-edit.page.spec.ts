@@ -1,19 +1,19 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { IonicModule } from '@ionic/angular';
 
-import { NewDatasetPage } from './new-dataset.page';
+import { DatasetEditPage } from './dataset-edit.page';
 
-describe('NewDatasetPage', () => {
-  let component: NewDatasetPage;
-  let fixture: ComponentFixture<NewDatasetPage>;
+describe('DatasetEditPage', () => {
+  let component: DatasetEditPage;
+  let fixture: ComponentFixture<DatasetEditPage>;
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ NewDatasetPage ],
+      declarations: [ DatasetEditPage ],
       imports: [IonicModule.forRoot()]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(NewDatasetPage);
+    fixture = TestBed.createComponent(DatasetEditPage);
     component = fixture.componentInstance;
     fixture.detectChanges();
   }));

@@ -23,11 +23,11 @@ export class DatasetComponent implements OnInit {
   constructor(private _fb: FormBuilder, private datasetService: DatasetService) {}
 
   ngOnInit() {
-    if(!this.form.contains('dataset_uuid')) {
-      this.datasetService.newEmptyDatasetAndTemplate().subscribe(dataset_object => {
-        this.form = this.convertDatasetObjectToForm(dataset_object);
-      });
-    }
+    // if(!this.form.contains('dataset_uuid')) {
+    //   this.datasetService.newEmptyDatasetAndTemplate().subscribe(dataset_object => {
+    //     this.form = this.convertDatasetObjectToForm(dataset_object);
+    //   });
+    // }
   }
 
   deleteField(index: number) {
@@ -121,7 +121,7 @@ export class DatasetComponent implements OnInit {
     return field;
   }
 
-  private convertDatasetObjectToForm(dataset_object: any) {
+  public convertDatasetObjectToForm(dataset_object: any) {
     let form = this._fb.group({
       dataset_uuid: dataset_object.dataset_uuid,
       template_uuid: dataset_object.template_uuid,

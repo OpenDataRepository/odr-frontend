@@ -2,12 +2,12 @@ import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { AuthGuard } from '../auth.guard';
 
-import { NewDatasetPage } from './new-dataset.page';
+import { DatasetEditPage } from './dataset-edit.page';
 
 const routes: Routes = [
   {
-    path: '',
-    component: NewDatasetPage,
+    path: ':uuid',
+    component: DatasetEditPage,
     canMatch: [AuthGuard]
   }
 ];
@@ -16,4 +16,4 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule],
 })
-export class NewDatasetPageRoutingModule {}
+export class DatasetEditPageRoutingModule {}

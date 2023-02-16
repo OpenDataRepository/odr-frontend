@@ -12,8 +12,8 @@ const routes: Routes = [
     pathMatch: 'full'
   },
   {
-    path: 'new-dataset',
-    loadChildren: () => import('./new-dataset/new-dataset.module').then( m => m.NewDatasetPageModule)
+    path: 'dataset-edit',
+    loadChildren: () => import('./dataset-edit/dataset-edit.module').then( m => m.DatasetEditPageModule)
   },
   {
     path: 'sign-up',

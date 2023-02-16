@@ -1,13 +1,14 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
+import { AuthGuard } from '../auth.guard';
 
 import { DatasetViewPage } from './dataset-view.page';
 
-// TODO: this route should take a uuid
 const routes: Routes = [
   {
     path: ':uuid',
-    component: DatasetViewPage
+    component: DatasetViewPage,
+    canMatch: [AuthGuard]
   }
 ];
 

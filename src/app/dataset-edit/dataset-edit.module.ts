@@ -4,9 +4,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { IonicModule } from '@ionic/angular';
 
-import { NewDatasetPageRoutingModule } from './new-dataset-routing.module';
+import { DatasetEditPageRoutingModule } from './dataset-edit-routing.module';
 
-import { NewDatasetPage } from './new-dataset.page';
+import { DatasetEditPage } from './dataset-edit.page';
 import { DatasetComponent } from './dataset/dataset.component';
 import { FieldComponent } from './field/field.component';
 import { HeaderModule } from '../header/header.module';
@@ -16,10 +16,10 @@ import { HeaderModule } from '../header/header.module';
     CommonModule,
     FormsModule,
     IonicModule,
-    NewDatasetPageRoutingModule,
+    DatasetEditPageRoutingModule,
     ReactiveFormsModule,
     HeaderModule
   ],
-  declarations: [NewDatasetPage, DatasetComponent, FieldComponent]
+  declarations: [DatasetEditPage, DatasetComponent, FieldComponent]
 })
-export class NewDatasetPageModule {}
+export class DatasetEditPageModule {}
