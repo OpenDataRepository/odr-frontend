@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ViewWillEnter } from '@ionic/angular';
+import { of, switchMap } from 'rxjs';
 import { DatasetService } from '../api/dataset.service';
 
 @Component({
@@ -26,13 +27,33 @@ export class DatasetViewPage implements OnInit, ViewWillEnter {
     }
     this.uuid = uuid as string;
 
-    this.datasetService.fetchDatasetAndTemplate(this.uuid).subscribe({
+    this.datasetService.fetchLatestDatasetAndTemplate(this.uuid).subscribe({
       next: (dataset: any) => { this.dataset = dataset; },
-      // TODO: Redirect if null and render otherwise
-      error: (err: any) => { console.log('HTTP Error', err) }
+      error: (err: any) => {
+        if(err.status == 404) {
+          this.router.navigateByUrl('/404', {skipLocationChange: true})
+          return;
+        }
+        console.log('HTTP Error', err)
+        this.datasetService.fetchLatestDatasetAndTemplate(this.uuid).subscribe({
+          next: (dataset: any) => { this.dataset = dataset; },
+          error: (err: any) => {
+            if(err.status == 404) {
+              this.router.navigateByUrl('/404', {skipLocationChange: true})
+              return;
+            }
+            console.log('HTTP Error', err)
+          }
+        });
+      }
     });
   }
 
-
+  persist() {
+    this.datasetService.persistDatasetAndTemplate(this.dataset).pipe(
+      switchMap(() => {return this.datasetService.fetchLatestDatasetAndTemplate(this.uuid)}),
+      switchMap((new_dataset) => {this.dataset = new_dataset; return of({});})
+    ).subscribe();
+  }
 
 }

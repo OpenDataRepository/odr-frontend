@@ -83,6 +83,91 @@ export class ApiService {
     )
   }
 
+  userDatasets() {
+    return this.auth.token
+    .pipe(
+      switchMap((token: any) => {
+        var reqHeader = new HttpHeaders({
+          'Content-Type': 'application/json',
+          'Authorization': token
+        });
+        return this.http
+        .get(
+          environment.backend_url +  '/account/datasets',
+          { headers: reqHeader }
+        );
+      })
+    )
+  }
+
+  deleteDatasetDraft(uuid: string) {
+    return this.auth.token
+    .pipe(
+      switchMap((token: any) => {
+        var reqHeader = new HttpHeaders({
+          'Content-Type': 'application/json',
+          'Authorization': token
+        });
+        return this.http
+        .delete(
+          environment.backend_url +  '/dataset/' + uuid + '/draft',
+          { headers: reqHeader }
+        );
+      })
+    )
+  }
+
+  persistDatasetDraft(uuid: string, last_update: string) {
+    return this.auth.token
+    .pipe(
+      switchMap((token: any) => {
+        var reqHeader = new HttpHeaders({
+          'Authorization': token
+        });
+        return this.http
+        .post(
+          environment.backend_url +  '/dataset/' + uuid + '/persist',
+          {last_update},
+          { headers: reqHeader }
+        );
+      })
+    )
+  }
+
+  fetchDatasetLatestPersisted(uuid: string) {
+    return this.auth.token
+    .pipe(
+      switchMap((token: any) => {
+        var reqHeader = new HttpHeaders({
+          'Content-Type': 'application/json',
+          'Authorization': token
+        });
+        return this.http
+        .get(
+          environment.backend_url +  '/dataset/' + uuid + '/latest_persisted',
+          { headers: reqHeader }
+        );
+      })
+    )
+  }
+
+  datasetDraftExisting(uuid: string) {
+    return this.auth.token
+    .pipe(
+      switchMap((token: any) => {
+        var reqHeader = new HttpHeaders({
+          'Content-Type': 'application/json',
+          'Authorization': token
+        });
+        return this.http
+        .get(
+          environment.backend_url +  '/dataset/' + uuid + '/draft_existing',
+          { headers: reqHeader }
+        );
+      })
+    )
+  }
+
 
 
   createTemplate(template: any) {
@@ -149,6 +234,40 @@ export class ApiService {
         return this.http
         .get(
           environment.backend_url +  '/template/version/' + id,
+          { headers: reqHeader }
+        );
+      })
+    )
+  }
+
+  deleteTemplateDraft(uuid: string) {
+    return this.auth.token
+    .pipe(
+      switchMap((token: any) => {
+        var reqHeader = new HttpHeaders({
+          'Content-Type': 'application/json',
+          'Authorization': token
+        });
+        return this.http
+        .delete(
+          environment.backend_url +  '/template/' + uuid + '/draft',
+          { headers: reqHeader }
+        );
+      })
+    )
+  }
+
+  persistTemplateDraft(uuid: string, last_update: string) {
+    return this.auth.token
+    .pipe(
+      switchMap((token: any) => {
+        var reqHeader = new HttpHeaders({
+          'Authorization': token
+        });
+        return this.http
+        .post(
+          environment.backend_url +  '/template/' + uuid + '/persist',
+          {last_update},
           { headers: reqHeader }
         );
       })

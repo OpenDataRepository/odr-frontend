@@ -32,7 +32,7 @@ export class DatasetEditPage implements OnInit {
     }
     this.uuid = uuid as string;
 
-    this.datasetService.fetchDatasetAndTemplate(this.uuid).subscribe({
+    this.datasetService.fetchDatasetAndTemplateDraft(this.uuid).subscribe({
       next: (dataset: any) => { this.form = this.dataset_component.convertDatasetObjectToForm(dataset); },
       // TODO: 404 if null and render otherwise
       error: (err: any) => { console.log('HTTP Error', err) }

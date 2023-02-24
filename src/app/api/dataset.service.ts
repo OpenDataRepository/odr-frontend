@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { of, switchMap } from 'rxjs';
+import { catchError, of, switchMap } from 'rxjs';
 import { ApiService } from './api.service';
 
 
@@ -34,6 +34,7 @@ export class DatasetService {
       }),
       switchMap((new_template) => {
         updated_template = new_template;
+        this.modifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset, new_template);
         return this.api.updateDataset(dataset)
       }),
       switchMap((updated_dataset) => {
@@ -42,15 +43,79 @@ export class DatasetService {
     )
   }
 
-  fetchDatasetAndTemplate(dataset_uuid: string) {
+  fetchDatasetAndTemplateDraft(dataset_uuid: string) {
     let return_dataset: any;
     return this.api.fetchDatasetDraft(dataset_uuid).pipe(
       switchMap((dataset: any) => {
         return_dataset = dataset;
-        return this.api.fetchTemplateVersion(dataset.template_id)
+        return this.api.fetchTemplateVersion(dataset.template_id).pipe(
+          catchError(error => {
+            if(error.status == 404) {
+              return this.api.deleteDatasetDraft(dataset_uuid).pipe(
+                switchMap(() => {
+                  throw new Error("Template doesn't exist, so dataset was automatically deleted.");
+                })
+              )
+            } else {
+              throw error;
+            }
+          })
+        )
       }),
       switchMap((template: any) => {
         return of(this.combineTemplateAndDataset(template, return_dataset));
+      })
+    )
+  }
+
+  deleteDatasetTemplateDraft(dataset_uuid: string) {
+    return this.fetchDatasetAndTemplateDraft(dataset_uuid).pipe(
+      switchMap((combined_dataset_template) => {
+        return this.api.deleteTemplateDraft(combined_dataset_template.template_uuid);
+      }),
+      catchError(() => {return of({})}),
+      switchMap(() => {
+        return this.api.deleteDatasetDraft(dataset_uuid);
+      })
+    )
+  }
+
+  fetchLatestDatasetAndTemplate(dataset_uuid: string) {
+    let return_dataset: any;
+    return this.api.datasetDraftExisting(dataset_uuid).pipe(
+      switchMap((answer: any) => {
+        if(answer) {
+          return this.api.fetchDatasetDraft(dataset_uuid);
+        } else {
+          return this.api.fetchDatasetLatestPersisted(dataset_uuid);
+        }
+      }),
+      switchMap((dataset: any) => {
+        return_dataset = dataset;
+        return this.api.fetchTemplateVersion(dataset.template_id).pipe(
+          catchError(error => {
+            if(error.status == 404) {
+              return this.api.deleteDatasetDraft(dataset_uuid).pipe(
+                switchMap(() => {
+                  throw new Error("Template doesn't exist, so dataset was automatically deleted.");
+                })
+              )
+            } else {
+              throw error;
+            }
+          })
+        )
+      }),
+      switchMap((template: any) => {
+        return of(this.combineTemplateAndDataset(template, return_dataset));
+      })
+    )
+  }
+
+  persistDatasetAndTemplate(combined_dataset_template: any) {
+    return this.api.persistTemplateDraft(combined_dataset_template.template_uuid, combined_dataset_template.template_updated_at).pipe(
+      switchMap(() => {
+        return this.api.persistDatasetDraft(combined_dataset_template.dataset_uuid, combined_dataset_template.dataset_updated_at);
       })
     )
   }
@@ -65,6 +130,7 @@ export class DatasetService {
       name: combined.name,
       uuid: combined.dataset_uuid,
       template_id: combined.template_id,
+      template_uuid: combined.template_uuid,
       related_datasets: []
     };
     for(let child of combined.related_datasets) {
@@ -88,15 +154,34 @@ export class DatasetService {
     }
     let related_datasets: any = [];
     for(let related_dataset of dataset.related_datasets) {
-      related_datasets.push(this.combineTemplateAndDataset(template_map[related_dataset.template_id], related_dataset))
+      try {
+        related_datasets.push(this.combineTemplateAndDataset(template_map[related_dataset.template_id], related_dataset));
+      } catch (err){ console.log(err); console.log('removing reference to dataset ' + related_dataset.uuid); }
     }
     return {
       dataset_uuid: dataset.uuid,
+      dataset_id: dataset._id,
       template_uuid: template.uuid,
       template_id: template._id,
       name: dataset.name,
+      dataset_updated_at: dataset.updated_at,
+      template_updated_at: template.updated_at,
+      dataset_persist_date: dataset.persist_date,
       fields: template.fields,
       related_datasets
     };
+  }
+
+  private modifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset: any, updated_template: any) {
+    if(dataset.template_id != updated_template._id) {
+      dataset.template_id = updated_template._id;
+    }
+    let template_map: any = {};
+    for(let related_template of updated_template.related_templates) {
+      template_map[related_template.uuid] = related_template;
+    }
+    for(let related_dataset of dataset.related_datasets) {
+      this.modifyDatasetTemplate_idsToMatchUpdatedTemplate(related_dataset, template_map[related_dataset.template_uuid]);
+    }
   }
 }

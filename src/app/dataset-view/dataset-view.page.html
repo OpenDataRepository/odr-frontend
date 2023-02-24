@@ -10,6 +10,9 @@
         <ion-col>
           <ion-button expand="block" [routerLink]="['/dataset-edit',uuid]">Edit</ion-button>
         </ion-col>
+        <ion-col *ngIf="dataset && !dataset.persist_date">
+          <ion-button expand="block" (click)="persist()">Save as Version</ion-button>
+        </ion-col>
       </ion-row>
     </ion-grid>
   </ion-toolbar>

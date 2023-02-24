@@ -1,9 +1,10 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { NgForm } from '@angular/forms';
-import { environment } from 'src/environments/environment';
-import { ViewWillEnter } from '@ionic/angular';
+import { ViewWillEnter, ToastController } from '@ionic/angular';
 import { HeaderComponent } from '../header/header.component';
+import { AuthService } from '../auth.service';
+import { ApiService } from '../api/api.service';
+import { DatasetService } from '../api/dataset.service';
+import { catchError, EMPTY, Observable, of, switchMap, take, tap } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -14,68 +15,83 @@ export class HomePage implements OnInit, ViewWillEnter {
 
   @ViewChild(HeaderComponent) header: HeaderComponent|undefined;
 
-  @ViewChild('singleRecordForm') singleRecordForm: NgForm|undefined;
-  private _fetchedRecord: object|undefined;
+  isLoggedIn = false;
+  datasets: any = [];
 
-  get fetchedRecord() {
-    return JSON.stringify(this._fetchedRecord);
-  }
-
-  @ViewChild('publishedRecordsForm') publishedRecordsForm: NgForm|undefined;
-  private _fetchedDatasetRecords: object|undefined;
-
-  get fetchedDatasetRecords() {
-    return JSON.stringify(this._fetchedDatasetRecords);
-  }
-
-  @ViewChild('searchRecordsForm') searchRecordsForm: NgForm|undefined;
-  private _searchedDatasetRecords: object|undefined;
-
-  get searchedDatasetRecords() {
-    return JSON.stringify(this._searchedDatasetRecords);
-  }
-
-  constructor(private http: HttpClient) {}
+  constructor(private api: ApiService, private auth: AuthService,
+    private datasetService: DatasetService, private toastController: ToastController) {}
 
   ngOnInit(): void {
 
   }
   ionViewWillEnter() {
     this.header?.reloadAuthorized();
-  }
-
-
-
-  fetchRecord() {
-    const uuid = this.singleRecordForm?.value['uuid'];
-    this.http.get(environment.backend_url +  '/record/' + uuid + '/latest_persisted')
-      .subscribe(response => {
-        this._fetchedRecord = response;
+    this.auth.userIsAuthenticated.pipe(
+      take(1),
+      switchMap((isAuthenticated) => {
+        if (!isAuthenticated) {
+          return this.auth.autoLogin();
+        } else {
+          return of(isAuthenticated);
+        }
+      }),
+      switchMap(isAuthenticated => {
+        this.isLoggedIn = isAuthenticated;
+        if (isAuthenticated) {
+          return this.api.userDatasets();
+        } else {
+          return of([]);
+        }
       })
+    ).subscribe(datasets => {
+      this.datasets = datasets;
+    });
+  }
+  deleteDraft(index: number) {
+    let dataset = this.datasets[index];
+    this.datasetService.deleteDatasetTemplateDraft(dataset.uuid).subscribe(() => {
+      this.presentToast();
+      this.api.fetchDatasetLatestPersisted(dataset.uuid).pipe(
+        catchError(err => {
+          if(err.status == 404) {
+            this.datasets.splice(index, 1);
+            return EMPTY;
+          } else {
+            throw err;
+          }
+        })
+      ).subscribe(new_dataset => {
+        this.datasets[index] = new_dataset;
+      });
+    })
+
+    // console.log('alternate delete...');
+    // new Observable(() => {throw 'error'}).pipe(
+    //   catchError(err => {
+    //     if(err == 'error') {
+    //       return EMPTY;
+    //     } else {
+    //       throw err;
+    //     }
+    //   })
+    // ).subscribe(() => {
+    //   console.log('finished');
+    // })
+
   }
 
-  fetchPublishedRecords() {
-    const uuid = this.publishedRecordsForm?.value['uuid'];
-    const version_name = this.publishedRecordsForm?.value['version_name'];
-    this.http.get('http://localhost:3000/dataset/' + uuid + '/published/' + version_name + '/records')
-      .subscribe(response => {
-        this._fetchedDatasetRecords = response;
-      })
-  }
+  private async presentToast() {
+    const toast = await this.toastController.create({
+      message: 'Draft Deleted',
+      duration: 2000,
+      buttons: [
+        {
+          text: 'Dismiss',
+          role: 'cancel'
+        }
+      ],
+    });
 
-  searchPublishedRecords() {
-    const uuid = this.searchRecordsForm?.value['uuid'];
-    const version_name = this.searchRecordsForm?.value['version_name'];
-    const key = this.searchRecordsForm?.value['key'];
-    const value = this.searchRecordsForm?.value['value'];
-    let url = 'http://localhost:3000/dataset/' + uuid + '/published/' + version_name + '/search_records';
-    if(key && value) {
-      url += "?" + key + "=" + value;
-    }
-    this.http.get(url)
-      .subscribe(response => {
-        this._searchedDatasetRecords = response;
-      })
+    await toast.present();
   }
-
 }
