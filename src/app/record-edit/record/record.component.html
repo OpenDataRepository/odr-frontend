@@ -1,0 +1,55 @@
+<form class="ion-margin" [ngClass]="{'border': form.valid, 'invalid-border': !form.valid}" [formGroup]="form">
+
+  <ion-item lines="inset">
+    <ion-label>uuid: {{ uuid?.value }}</ion-label>
+  </ion-item>
+
+  <ion-item lines="none">Fields:</ion-item>
+  <div class="ion-margin" formArrayName="fields">
+    <div *ngFor="let f of fields_form_array?.controls; index as j">
+      <form class="ion-margin" [ngClass]="{'border': f.valid, 'invalid-border': !f.valid}" [formGroup]="castControlToGroup(f)">
+        <ion-item lines="inset">
+          <ion-label>Name: {{ f.get('name')?.value }}</ion-label>
+        </ion-item>
+        <ion-item lines="inset">
+          <ion-label>Description: {{ f.get('description')?.value }}</ion-label>
+        </ion-item>
+        <ion-item lines="inset">
+          <ion-label>Value:</ion-label>
+          <ion-input formControlName="value" placeholder="Enter value here..."></ion-input>
+        </ion-item>
+      </form>
+    </div>
+  </div>
+
+  <div *ngIf="related_datasets && related_datasets.length > 0">
+    <ion-item lines="none">Related Records:</ion-item>
+    <div class="ion-margin" formArrayName="related_records">
+      <div *ngFor="let f of related_records_form_array?.controls; index as i">
+        <record-edit
+            [form]="f"
+            (remove)="deleteRelatedRecord(i)">
+        </record-edit>
+      </div>
+      <div>
+        <ion-button id="add-related-record">Add Related Record</ion-button>
+        <ion-popover trigger="add-related-record" [dismissOnSelect]="true">
+          <ng-template>
+            <ion-content>
+              <ion-list>
+                <ion-item *ngFor="let related_dataset of related_datasets" lines="none"
+                [button]="true" [detail]="false" (click)="addRelatedRecord(related_dataset.uuid)"
+                >{{ related_dataset.name }}</ion-item>
+              </ion-list>
+            </ion-content>
+          </ng-template>
+        </ion-popover>
+      </div>
+    </div>
+  </div>
+
+  <ion-item *ngIf="!is_top_level_record">
+    <ion-button (click)="remove.emit()" color="danger">Remove Record</ion-button>
+  </ion-item>
+
+</form>

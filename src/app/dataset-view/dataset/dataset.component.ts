@@ -10,6 +10,10 @@ export class DatasetComponent implements OnInit {
   @Input()
   dataset: any = {};
 
+  get persisted(): boolean {
+    return !!this.dataset?.dataset_persist_date;
+  }
+
   constructor() { }
 
   ngOnInit() {}

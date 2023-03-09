@@ -1,0 +1,19 @@
+<app-header></app-header>
+<ion-content>
+  <record-view [record]="record"></record-view>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-grid>
+      <ion-row class="ion-text-center">
+        <ion-col>
+          <ion-button expand="block" [routerLink]="['/record-edit',uuid]">Edit</ion-button>
+        </ion-col>
+        <ion-col *ngIf="record && !record.persist_date">
+          <ion-button expand="block" (click)="persist()">Save as Version</ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </ion-toolbar>
+</ion-footer>

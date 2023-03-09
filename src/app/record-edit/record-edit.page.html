@@ -1,0 +1,19 @@
+<app-header></app-header>
+<ion-content>
+  <record-edit [is_top_level_record]="true" [form]="form"></record-edit>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-grid>
+      <ion-row class="ion-text-center">
+        <ion-col on-mouseover='displayFormProblems()'>
+          <ion-button expand="block" (click)="saveDraft()" [disabled]="!record_component.form?.valid">Save Draft</ion-button>
+        </ion-col>
+        <ion-col>
+          <ion-button expand="block" color="danger" (click)="exitEditMode()">Exit Edit Mode</ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </ion-toolbar>
+</ion-footer>

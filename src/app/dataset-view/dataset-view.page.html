@@ -10,8 +10,19 @@
         <ion-col>
           <ion-button expand="block" [routerLink]="['/dataset-edit',uuid]">Edit</ion-button>
         </ion-col>
-        <ion-col *ngIf="dataset && !dataset.persist_date">
-          <ion-button expand="block" (click)="persist()">Save as Version</ion-button>
+        <ion-col>
+          <ion-button expand="block" (click)="persist()" [disabled]="dataset && persisted">Save as Version</ion-button>
+        </ion-col>
+        <ion-col>
+          <div id="hover-trigger">
+            <ion-button expand="block" [routerLink]="['/dataset-records',uuid]"
+            [disabled]="!has_persisted_version">Records</ion-button>
+          </div>
+          <ion-popover *ngIf="!has_persisted_version" trigger="hover-trigger" triggerAction="hover">
+            <ng-template>
+              <ion-content class="ion-padding">Dataset must have a saved version to create/access records</ion-content>
+            </ng-template>
+          </ion-popover>
         </ion-col>
       </ion-row>
     </ion-grid>

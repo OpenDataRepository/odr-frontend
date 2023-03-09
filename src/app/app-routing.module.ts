@@ -28,6 +28,18 @@ const routes: Routes = [
     loadChildren: () => import('./dataset-view/dataset-view.module').then( m => m.DatasetViewPageModule)
   },
   {
+    path: 'dataset-records',
+    loadChildren: () => import('./dataset-records/dataset-records.module').then( m => m.DatasetRecordsPageModule)
+  },
+  {
+    path: 'record-edit',
+    loadChildren: () => import('./record-edit/record-edit.module').then( m => m.RecordEditPageModule)
+  },
+  {
+    path: 'record-view',
+    loadChildren: () => import('./record-view/record-view.module').then( m => m.RecordViewPageModule)
+  },
+  {
     path: '**',
     loadChildren: () => import('./not-found/not-found.module').then( m => m.NotFoundPageModule)
   }

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ViewWillEnter } from '@ionic/angular';
 import { of, switchMap } from 'rxjs';
+import { ApiService } from '../api/api.service';
 import { DatasetService } from '../api/dataset.service';
 
 @Component({
@@ -13,8 +14,10 @@ export class DatasetViewPage implements OnInit, ViewWillEnter {
 
   uuid: string = "";
   dataset: any = {};
+  has_persisted_version = false;
 
-  constructor(private route: ActivatedRoute, private router: Router, private datasetService: DatasetService) { }
+  constructor(private route: ActivatedRoute, private router: Router,
+    private datasetService: DatasetService, private api: ApiService) { }
 
   ngOnInit(): void {
 
@@ -47,6 +50,11 @@ export class DatasetViewPage implements OnInit, ViewWillEnter {
         });
       }
     });
+
+    this.api.fetchDatasetLatestPersisted(this.uuid).subscribe({
+      next: () => { this.has_persisted_version = true; },
+      error: () => { this.has_persisted_version = false; }
+    })
   }
 
   persist() {
@@ -54,6 +62,10 @@ export class DatasetViewPage implements OnInit, ViewWillEnter {
       switchMap(() => {return this.datasetService.fetchLatestDatasetAndTemplate(this.uuid)}),
       switchMap((new_dataset) => {this.dataset = new_dataset; return of({});})
     ).subscribe();
+  }
+
+  get persisted(): boolean {
+    return !!this.dataset?.dataset_persist_date;
   }
 
 }
