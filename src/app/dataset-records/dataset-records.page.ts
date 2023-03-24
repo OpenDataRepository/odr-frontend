@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastController, ViewWillEnter } from '@ionic/angular';
-import { catchError, EMPTY } from 'rxjs';
+import { catchError, EMPTY, throwError } from 'rxjs';
 import { ApiService } from '../api/api.service';
 
 @Component({
@@ -40,7 +40,7 @@ export class DatasetRecordsPage implements OnInit, ViewWillEnter {
             this.records.splice(index, 1);
             return EMPTY;
           } else {
-            throw err;
+            return throwError(() => err);
           }
         })
       ).subscribe(new_record => {

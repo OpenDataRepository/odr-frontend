@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { catchError, of, switchMap, tap } from 'rxjs';
+import { catchError, of, switchMap, tap, throwError } from 'rxjs';
 import { ApiService } from './api.service';
 
 
@@ -93,7 +93,7 @@ export class DatasetService {
         if(error.status == 404) {
           return this.fetchPersistedDatasetAndTemplateDraft(dataset_uuid);
         } else {
-          throw error;
+          return throwError(() => error);
         }
       }),
     )
@@ -120,7 +120,7 @@ export class DatasetService {
     )
   }
 
-  fetchSyncedDatasetAndTemplateDraft(dataset_uuid: string) {
+  private fetchSyncedDatasetAndTemplateDraft(dataset_uuid: string) {
     let final_template: any;
     return this.fetchLatestTemplateForDataset(dataset_uuid).pipe(
       catchError(error => {
@@ -128,11 +128,11 @@ export class DatasetService {
           return this.api.deleteDatasetDraft(dataset_uuid).pipe(
             switchMap(() => {
               console.log("Template doesn't exist, so dataset was automatically deleted.");
-              throw error;
+              return throwError(() => error);
             })
           )
         } else {
-          throw error;
+          return throwError(() => error);
         }
       }),
       switchMap((template: any) => {
@@ -143,7 +143,7 @@ export class DatasetService {
         return this.modifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset, final_template);
       }),
       switchMap((dataset: any) => {
-        return this.api.updateDataset(dataset)
+        return this.api.updateDataset(dataset);
       }),
       switchMap((updated_dataset) => {
         return of(this.combineTemplateAndDataset(final_template, updated_dataset));
@@ -163,7 +163,7 @@ export class DatasetService {
             if(error.status == 404) {
               return this.api.fetchTemplateLatestPersisted(template_version.uuid);
             } else {
-              throw error;
+              return throwError(() => error);
             }
           }),
         )
@@ -177,7 +177,7 @@ export class DatasetService {
         if(error.status == 404) {
           return this.api.fetchDatasetLatestPersisted(dataset_uuid);
         } else {
-          throw error;
+          return throwError(() => error);
         }
       }),
     )

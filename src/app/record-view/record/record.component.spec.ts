@@ -3,7 +3,7 @@ import { IonicModule } from '@ionic/angular';
 
 import { RecordComponent } from './record.component';
 
-describe('RecordComponent', () => {
+describe('RecordViewComponent', () => {
   let component: RecordComponent;
   let fixture: ComponentFixture<RecordComponent>;
 

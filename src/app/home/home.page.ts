@@ -4,7 +4,7 @@ import { HeaderComponent } from '../header/header.component';
 import { AuthService } from '../auth.service';
 import { ApiService } from '../api/api.service';
 import { DatasetService } from '../api/dataset.service';
-import { catchError, EMPTY, Observable, of, switchMap, take, tap } from 'rxjs';
+import { catchError, EMPTY, Observable, of, switchMap, take, tap, throwError } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -57,7 +57,7 @@ export class HomePage implements OnInit, ViewWillEnter {
             this.datasets.splice(index, 1);
             return EMPTY;
           } else {
-            throw err;
+            return throwError(() => err);
           }
         })
       ).subscribe(new_dataset => {

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { catchError, switchMap } from 'rxjs';
+import { catchError, switchMap, throwError } from 'rxjs';
 import { ApiService } from './api.service';
 
 @Injectable({
@@ -15,7 +15,7 @@ export class RecordService {
         if(err.status == 404) {
           return this.api.fetchRecordLatestPersisted(uuid);
         } else {
-          throw err;
+          return throwError(() => err);
         }
       })
     )
