@@ -88,10 +88,20 @@ export class RecordComponent implements OnInit {
     let record_object = this.convertFormToRecordObject(this.form as FormGroup);
     return this.api.updateRecord(record_object).pipe(
       switchMap((response: any) => {
-          let updated_record_object = response.record;
-          let new_form = this.convertRecordObjectToForm(updated_record_object, this.form.get('dataset')?.value);
-          this.copyNewFormToComponentForm(new_form);
-          return of({});
+          let lastStepsCallback = (record: any) => {
+            let new_form = this.convertRecordObjectToForm(record, this.form.get('dataset')?.value);
+            this.copyNewFormToComponentForm(new_form);
+            return of({});
+          }
+          if(response.record) {
+            return lastStepsCallback(response.record);
+          } else {
+            return this.api.fetchRecordLatestPersisted(this.uuid.value).pipe(
+              switchMap((record: any) => {
+                return lastStepsCallback(record);
+              })
+            )
+          }
         }
       )
     )

@@ -81,6 +81,9 @@ export class DatasetComponent implements OnInit {
   saveDraft() {
     let dataset_object = this.convertFormToDatasetObject(this.form as FormGroup);
     return this.datasetService.updateDatasetAndTemplate(dataset_object).pipe(
+      switchMap(() => {
+        return this.datasetService.fetchLatestDatasetAndTemplate(this.uuid.value);
+      }),
       switchMap((updated_dataset_object) => {
           let new_form = this.convertDatasetObjectToForm(updated_dataset_object);
           this.copyNewFormToComponentForm(new_form);

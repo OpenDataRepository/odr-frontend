@@ -37,43 +37,10 @@ export class DatasetService {
         return this.modifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset, new_template);
       }),
       switchMap((dataset) => {
-        return this.api.updateDataset(dataset)
-      }),
-      switchMap((updated_dataset) => {
-        return of(this.combineTemplateAndDataset(updated_template, updated_dataset));
+        return this.api.updateDataset(dataset);
       })
     )
   }
-
-  // fetchDatasetAndTemplateDraft(dataset_uuid: string) {
-  //   let return_dataset: any;
-  //   return this.api.fetchDatasetDraft(dataset_uuid).pipe(
-  //     switchMap((dataset: any) => {
-  //       return_dataset = dataset;
-  //       return this.api.fetchTemplateVersion(dataset.template_id).pipe(
-  //         catchError(error => {
-  //           if(error.status == 404) {
-  //             return this.api.deleteDatasetDraft(dataset_uuid).pipe(
-  //               switchMap(() => {
-  //                 throw new Error("Template doesn't exist, so dataset was automatically deleted.");
-  //               })
-  //             )
-  //           } else {
-  //             throw error;
-  //           }
-  //         }),
-  //         switchMap((template: any) => {
-  //           let new_template = this.api.fetchTemplateDraft(template.uuid);
-  //           return new_template;
-  //         })
-  //       )
-  //     }),
-  //     switchMap((template: any) => {
-  //       this.modifyDatasetTemplate_idsToMatchUpdatedTemplate(return_dataset, template);
-  //       return of(this.combineTemplateAndDataset(template, return_dataset));
-  //     })
-  //   )
-  // }
 
   deleteDatasetTemplateDraft(dataset_uuid: string) {
     return this.fetchSyncedDatasetAndTemplateDraft(dataset_uuid).pipe(
@@ -82,7 +49,7 @@ export class DatasetService {
       }),
       catchError(() => {return of({})}),
       switchMap(() => {
-        return this.api.deleteDatasetDraft(dataset_uuid);
+        return this.safeDeleteDatasetDraft(dataset_uuid);
       })
     )
   }
@@ -101,6 +68,13 @@ export class DatasetService {
 
   persistDatasetAndTemplate(combined_dataset_template: any) {
     return this.api.persistTemplateDraft(combined_dataset_template.template_uuid, combined_dataset_template.template_updated_at).pipe(
+      catchError(error => {
+        if(error.error == "No changes to persist") {
+          return of(null);
+        } else {
+          return throwError(() => error);
+        }
+      }),
       switchMap(() => {
         return this.api.persistDatasetDraft(combined_dataset_template.dataset_uuid, combined_dataset_template.dataset_updated_at);
       })
@@ -125,7 +99,7 @@ export class DatasetService {
     return this.fetchLatestTemplateForDataset(dataset_uuid).pipe(
       catchError(error => {
         if(error.status == 404) {
-          return this.api.deleteDatasetDraft(dataset_uuid).pipe(
+          return this.safeDeleteDatasetDraft(dataset_uuid).pipe(
             switchMap(() => {
               console.log("Template doesn't exist, so dataset was automatically deleted.");
               return throwError(() => error);
@@ -235,36 +209,27 @@ export class DatasetService {
     };
   }
 
-  private recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset: any, dataset_template: any, updated_template: any) {
+  private recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset: any, updated_template: any) {
     if(dataset.template_id != updated_template._id) {
       dataset.template_id = updated_template._id;
-    }
-    let existing_template_map: any = {};
-    for(let related_template of dataset_template.related_templates) {
-      existing_template_map[related_template._id] = related_template;
     }
     let updated_template_map: any = {};
     for(let related_template of updated_template.related_templates) {
       updated_template_map[related_template.uuid] = related_template;
     }
     for(let related_dataset of dataset.related_datasets) {
-      if(!(related_dataset.template_id in existing_template_map)) {
+      if(!(related_dataset.template_uuid in updated_template_map)) {
         throw new Error(`recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate: dataset ${related_dataset.uuid} references
         template ${related_dataset.template_id}, which is not designated by the parent template`);
       }
-      let existing_template = existing_template_map[related_dataset.template_id];
-      let updated_template = updated_template_map[existing_template.uuid];
-      this.recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate(related_dataset, existing_template, updated_template);
+      let updated_template = updated_template_map[related_dataset.template_uuid];
+      this.recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate(related_dataset, updated_template);
     }
   }
 
   private modifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset: any, updated_template: any) {
-    return this.api.fetchTemplateVersion(dataset.template_id).pipe(
-      switchMap((existing_template: any) => {
-        this.recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset, existing_template, updated_template);
-        return of(dataset);
-      })
-    )
+    this.recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset, updated_template);
+    return of(dataset);
   }
 
   private fetchLatestTemplate(uuid: string) {
@@ -274,6 +239,18 @@ export class DatasetService {
           return this.api.fetchTemplateDraft(uuid);
         } else {
           return this.api.fetchTemplateLatestPersisted(uuid);
+        }
+      })
+    )
+  }
+
+  private safeDeleteDatasetDraft(uuid: string) {
+    return this.api.deleteDatasetDraft(uuid).pipe(
+      catchError(error => {
+        if(error.status == 404) {
+          return of(null);
+        } else {
+          return throwError(() => error);
         }
       })
     )

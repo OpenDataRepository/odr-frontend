@@ -1,14 +1,9 @@
 import { HttpErrorResponse } from "@angular/common/http";
-import { catchError, Observable, of, throwError } from "rxjs";
+import { catchError, Observable, of, switchMap, throwError } from "rxjs";
 import { DatasetService } from "./dataset.service";
 
 let datasetService: DatasetService;
 const notFoundError = new HttpErrorResponse({status: 404});
-
-it('testing framework working', () => {
-  let i = true;
-  expect(true).toBe(true);
-});
 
 it('can throw and catch errors', () => {
   let callback = () => {
@@ -78,7 +73,7 @@ describe('updateDatasetAndTemplate', () => {
     }
 
     const apiServiceSpy = jasmine.createSpyObj('ApiService', ['updateTemplate', 'templateDraftExisting',
-    'fetchTemplateDraft', 'fetchTemplateVersion', 'updateDataset']);
+    'fetchTemplateDraft', 'fetchTemplateVersion', 'updateDataset', 'fetchDatasetDraft']);
     datasetService = new DatasetService(apiServiceSpy);
 
     apiServiceSpy.updateTemplate.and.returnValue(of({}));
@@ -96,7 +91,6 @@ describe('updateDatasetAndTemplate', () => {
       related_templates: []
     };
     apiServiceSpy.fetchTemplateDraft.and.returnValue(of(return_template));
-    apiServiceSpy.fetchTemplateVersion.and.returnValue(of(return_template));
     let return_dataset = {
       uuid: input.dataset_uuid,
       _id: input.dataset_id,
@@ -107,8 +101,17 @@ describe('updateDatasetAndTemplate', () => {
     };
     apiServiceSpy.updateDataset.and.returnValue(of(return_dataset));
 
+    // For call to fetchLatestDatasetAndTemplate
+    apiServiceSpy.fetchDatasetDraft.and.returnValue(of({template_id: return_template._id}));
+    apiServiceSpy.fetchTemplateVersion.and.returnValue(of({uuid: return_template.uuid}));
+    apiServiceSpy.fetchTemplateDraft.and.returnValue(of(return_template));
+    apiServiceSpy.fetchDatasetDraft.and.returnValue(of(return_dataset));
+    apiServiceSpy.updateDataset.and.returnValue(of(return_dataset));
+
     datasetService = new DatasetService(apiServiceSpy);
-    datasetService.updateDatasetAndTemplate(input).subscribe(combined => {
+    datasetService.updateDatasetAndTemplate(input).pipe(
+      switchMap(() => datasetService.fetchLatestDatasetAndTemplate(input.dataset_uuid))
+    ).subscribe(combined => {
       expect(combined.dataset_uuid).toEqual(input.dataset_uuid);
       expect(combined.dataset_id).toEqual(input.dataset_id);
       expect(combined.template_uuid).toEqual(input.template_uuid);
@@ -157,36 +160,11 @@ describe('updateDatasetAndTemplate', () => {
     }
 
     const apiServiceSpy = jasmine.createSpyObj('ApiService', ['updateTemplate', 'templateDraftExisting',
-    'fetchTemplateDraft', 'fetchTemplateVersion', 'updateDataset']);
+    'fetchTemplateDraft', 'fetchTemplateVersion', 'updateDataset', 'fetchDatasetDraft', 'fetchDatasetLatestPersisted']);
     datasetService = new DatasetService(apiServiceSpy);
 
     apiServiceSpy.updateTemplate.and.returnValue(of({}));
     apiServiceSpy.templateDraftExisting.and.returnValue(of(true));
-    let existing_template = {
-      uuid: input.template_uuid,
-      _id: input.template_id,
-      name: "",
-      updated_at: (new Date()).toISOString(),
-      fields: [],
-      related_templates: [
-        {
-          uuid: input.related_datasets[0].template_uuid,
-          _id: input.related_datasets[0].template_id,
-          name: "",
-          updated_at: (new Date()).toISOString(),
-          fields: [],
-          related_templates: []
-        },
-        {
-          uuid: input.related_datasets[1].template_uuid,
-          _id: input.related_datasets[1].template_id,
-          name: "",
-          updated_at: (new Date()).toISOString(),
-          fields: [],
-          related_templates: []
-        }
-      ]
-    };
     let new_template = {
       uuid: input.template_uuid,
       _id: "t_id_updated",
@@ -213,17 +191,18 @@ describe('updateDatasetAndTemplate', () => {
       ]
     };
     apiServiceSpy.fetchTemplateDraft.and.returnValue(of(new_template));
-    apiServiceSpy.fetchTemplateVersion.and.returnValue(of(existing_template));
     let return_dataset = {
       uuid: input.dataset_uuid,
       _id: "d_id_updated",
       template_id: new_template._id,
+      template_uuid: new_template.uuid,
       name: input.name,
       updated_at: (new Date()).toISOString(),
       related_datasets: [
         {
           uuid: input.related_datasets[0].dataset_uuid,
           _id: "d2_id_updated",
+          template_uuid: new_template.related_templates[0].uuid,
           template_id: new_template.related_templates[0]._id,
           name: input.related_datasets[0].name,
           updated_at: (new Date()).toISOString(),
@@ -232,6 +211,7 @@ describe('updateDatasetAndTemplate', () => {
         {
           uuid: input.related_datasets[1].dataset_uuid,
           _id: "d3_id_updated",
+          template_uuid: new_template.related_templates[1].uuid,
           template_id: new_template.related_templates[1]._id,
           name: input.related_datasets[1].name,
           updated_at: (new Date()).toISOString(),
@@ -241,8 +221,15 @@ describe('updateDatasetAndTemplate', () => {
     };
     apiServiceSpy.updateDataset.and.returnValue(of(return_dataset));
 
+    // For call to fetchLatestDatasetAndTemplate
+    apiServiceSpy.fetchDatasetDraft.and.returnValue(of(return_dataset));
+    apiServiceSpy.fetchTemplateVersion.withArgs(return_dataset.template_id).and.returnValue(of({uuid: new_template.uuid}));
+    apiServiceSpy.updateDataset.and.returnValue(of(return_dataset));
+
     datasetService = new DatasetService(apiServiceSpy);
-    datasetService.updateDatasetAndTemplate(input).subscribe(combined => {
+    datasetService.updateDatasetAndTemplate(input).pipe(
+      switchMap(() => datasetService.fetchLatestDatasetAndTemplate(input.dataset_uuid))
+    ).subscribe(combined => {
       expect(combined.dataset_uuid).toEqual(input.dataset_uuid);
       expect(combined.dataset_id).toEqual(return_dataset._id);
       expect(combined.template_uuid).toEqual(input.template_uuid);
@@ -278,6 +265,71 @@ describe('updateDatasetAndTemplate', () => {
       done();
     });
   });
+
+  it('template referenced is deleted', (done: DoneFn) => {
+    // persisted template is updated and then update removed - dataset still has valid template to point to
+
+    let input = {
+      dataset_uuid: "d_uuid",
+      dataset_id: "d_id",
+      template_uuid: "t_uuid",
+      template_id: "t_id_updated",
+      name: "name",
+      fields: [],
+      related_datasets: []
+    }
+
+    const apiServiceSpy = jasmine.createSpyObj('ApiService', ['updateTemplate', 'templateDraftExisting',
+    'fetchTemplateDraft', 'fetchTemplateLatestPersisted', 'fetchTemplateVersion', 'updateDataset', 'fetchDatasetDraft']);
+    datasetService = new DatasetService(apiServiceSpy);
+
+    apiServiceSpy.updateTemplate.and.returnValue(of({}));
+    apiServiceSpy.templateDraftExisting.and.returnValue(of(false));
+    let return_template = {
+      uuid: input.template_uuid,
+      _id: input.template_id,
+      name: "",
+      updated_at: (new Date()).toISOString(),
+      persist_date: (new Date()).toISOString(),
+      fields: [],
+      related_templates: []
+    };
+    apiServiceSpy.fetchTemplateLatestPersisted.and.returnValue(of(return_template));
+    let return_dataset = {
+      uuid: input.dataset_uuid,
+      _id: input.dataset_id,
+      template_id: input.template_id,
+      name: input.name,
+      updated_at: (new Date()).toISOString(),
+      related_datasets: []
+    };
+    apiServiceSpy.updateDataset.and.returnValue(of(return_dataset));
+
+    // For call to fetchLatestDatasetAndTemplate
+    apiServiceSpy.fetchDatasetDraft.and.returnValue(of({template_id: return_template._id}));
+    apiServiceSpy.fetchTemplateVersion.and.returnValue(of({uuid: return_template.uuid}));
+    apiServiceSpy.fetchTemplateDraft.and.returnValue(throwError(() => notFoundError));
+    // apiServiceSpy.fetchTemplateLatestPersisted.and.returnValue(of(return_template));
+    apiServiceSpy.fetchDatasetDraft.and.returnValue(of(return_dataset));
+    // apiServiceSpy.updateDataset.and.returnValue(of(return_dataset));
+
+    datasetService = new DatasetService(apiServiceSpy);
+    datasetService.updateDatasetAndTemplate(input).pipe(
+      switchMap(() => datasetService.fetchLatestDatasetAndTemplate(input.dataset_uuid))
+    ).subscribe(combined => {
+      expect(combined.dataset_uuid).toEqual(input.dataset_uuid);
+      expect(combined.dataset_id).toEqual(input.dataset_id);
+      expect(combined.template_uuid).toEqual(input.template_uuid);
+      expect(combined.template_id).toEqual(input.template_id);
+      expect(combined.name).toEqual(input.name);
+      expect(combined.dataset_updated_at).toEqual(return_dataset.updated_at);
+      expect(combined.template_updated_at).toEqual(return_template.updated_at);
+      expect(combined.dataset_persist_date).toBe(undefined);
+      expect(combined.fields.length).toBe(0);
+      expect(combined.related_datasets.length).toBe(0);
+      done();
+    });
+  });
 });
 
 describe('fetchLatestDatasetAndTemplate', () => {
@@ -296,6 +348,7 @@ describe('fetchLatestDatasetAndTemplate', () => {
       uuid: "d_uuid",
       _id: "d_id",
       template_id: return_template._id,
+      template_uuid: return_template.uuid,
       name: "name",
       updated_at: (new Date()).toISOString(),
       related_datasets: []
@@ -347,6 +400,7 @@ describe('fetchLatestDatasetAndTemplate', () => {
       uuid: "d_uuid",
       _id: "d_id",
       template_id: return_template._id,
+      template_uuid: return_template.uuid,
       name: "name",
       updated_at: (new Date()).toISOString(),
       persist_date: (new Date()).toISOString(),
@@ -404,6 +458,7 @@ describe('fetchLatestDatasetAndTemplate', () => {
       uuid: "d_uuid",
       _id: "d_id",
       template_id: return_template._id,
+      template_uuid: return_template.uuid,
       name: "name",
       updated_at: (new Date()).toISOString(),
       related_datasets: []
@@ -456,6 +511,7 @@ describe('fetchLatestDatasetAndTemplate', () => {
       uuid: "d_uuid",
       _id: "d_id2",
       template_id: prev_persisted_template._id,
+      template_uuid: prev_persisted_template.uuid,
       name: "name",
       updated_at: (new Date()).toISOString(),
       related_datasets: []
@@ -474,6 +530,7 @@ describe('fetchLatestDatasetAndTemplate', () => {
       uuid: "d_uuid",
       _id: "d_id",
       template_id: return_template._id,
+      template_uuid: return_template.uuid,
       name: "name",
       updated_at: (new Date()).toISOString(),
       related_datasets: []
@@ -613,4 +670,22 @@ describe('fetchLatestDatasetAndTemplate', () => {
 
   // });
 
+});
+
+describe('persistDatasetAndTemplate', () => {
+  it('No changes for template to persist - only dataset should be persisted', (done: DoneFn) => {
+
+    const apiServiceSpy = jasmine.createSpyObj('ApiService', ['persistTemplateDraft', 'persistDatasetDraft']);
+    datasetService = new DatasetService(apiServiceSpy);
+
+    apiServiceSpy.persistTemplateDraft.and.returnValue(throwError(() => new HttpErrorResponse({status: 400, error: "No changes to persist"})));
+    apiServiceSpy.persistDatasetDraft.and.returnValue(of(null));
+
+    datasetService = new DatasetService(apiServiceSpy);
+    datasetService.persistDatasetAndTemplate({}).subscribe({
+      next: () => done(),
+      error: error => done.fail('error not caught'),
+      complete: () => {}
+    });
+  });
 });

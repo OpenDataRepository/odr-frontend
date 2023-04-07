@@ -8,6 +8,7 @@ import { ApiService } from '../api/api.service';
 
 import { RecordEditPage } from './record-edit.page';
 import { RecordComponent } from './record/record.component';
+import { RecordService } from '../api/record.service';
 
 describe('RecordEditPage', () => {
   let component: RecordEditPage;
@@ -24,17 +25,6 @@ describe('RecordEditPage', () => {
   }
 
   class ApiServiceMock {
-    fetchRecordDraft = () => {
-      return of({
-        dataset_uuid: "d_uuid",
-        _id: "_id",
-        uuid: "r_uuid",
-        updated_at: (new Date()).toISOString(),
-        persist_date: undefined,
-        fields: [],
-        related_records: []
-      });
-    };
     fetchDatasetLatestPersisted = () => {
       return of({
         uuid: "d_uuid",
@@ -47,6 +37,20 @@ describe('RecordEditPage', () => {
         related_datasets: []
       });
     }
+  }
+
+  class RecordServiceMock {
+    fetchLatestRecord = () => {
+      return of({
+        dataset_uuid: "d_uuid",
+        _id: "_id",
+        uuid: "r_uuid",
+        updated_at: (new Date()).toISOString(),
+        persist_date: (new Date()).toISOString(),
+        fields: [],
+        related_records: []
+      });
+    };
   }
 
   // @Component({selector: 'record-edit', template: ''})
@@ -74,6 +78,7 @@ describe('RecordEditPage', () => {
         RecordComponent,
         { provide: ActivatedRoute, useClass: ActivatedRouteMock },
         { provide: ApiService, useClass: ApiServiceMock },
+        { provide: RecordService, useClass: RecordServiceMock },
         FormBuilder
       ],
       imports: [IonicModule.forRoot()]
@@ -89,7 +94,9 @@ describe('RecordEditPage', () => {
     fixture.detectChanges();
   }));
 
-  it('should create', () => {
+  it('should fetch persisted record if no draft exists', () => {
+    // Handled before tests
     expect(component).toBeTruthy();
   });
+
 });

@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, switchMap } from 'rxjs';
 import { ApiService } from '../api/api.service';
 import { RecordComponent } from './record/record.component';
+import { RecordService } from '../api/record.service';
 
 @Component({
   selector: 'app-record-edit',
@@ -19,7 +20,7 @@ export class RecordEditPage implements OnInit {
     related_records: new FormArray([])});
   dataset: any;
 
-  constructor(private route: ActivatedRoute, private router: Router, private api: ApiService) { }
+  constructor(private route: ActivatedRoute, private router: Router, private api: ApiService, private recordService: RecordService) { }
 
   ngOnInit() {
   }
@@ -36,7 +37,7 @@ export class RecordEditPage implements OnInit {
     this.uuid = uuid as string;
 
     let temp_record: any;
-    this.api.fetchRecordDraft(this.uuid).pipe(
+    this.recordService.fetchLatestRecord(this.uuid).pipe(
       switchMap((record: any) => {
         temp_record = record
         return this.api.fetchDatasetLatestPersisted(record.dataset_uuid);
