@@ -1,7 +1,9 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { FormGroup, FormControl, FormArray, FormBuilder, Validators, AbstractControl } from '@angular/forms';
-import { switchMap, of } from 'rxjs';
+import { AlertController, IonModal } from '@ionic/angular';
+import { switchMap, of, from, forkJoin, take } from 'rxjs';
 import { ApiService } from 'src/app/api/api.service';
+import { RecordService } from 'src/app/api/record.service';
 
 @Component({
   selector: 'record-edit',
@@ -17,13 +19,16 @@ export class RecordComponent implements OnInit {
   form: FormGroup|any = new FormGroup({name: new FormControl(), fields: new FormArray([]),
     related_records: new FormArray([])});
 
-  @Input()
-  dataset: any;
-
   @Output()
   remove: EventEmitter<void> = new EventEmitter<void>();
 
-  constructor(private _fb: FormBuilder, private api: ApiService) {}
+  @ViewChild(IonModal) link_record_modal!: IonModal;
+
+  records_available = false;
+  records_to_link: any = [];
+
+  constructor(private _fb: FormBuilder, private api: ApiService, private recordService: RecordService,
+    private alertController: AlertController) {}
 
   ngOnInit() {
   }
@@ -56,6 +61,59 @@ export class RecordComponent implements OnInit {
         return this.saveDraft();
       })
     ).subscribe();
+  }
+
+  loadRecordsAvailableToLink(){
+    this.records_available = false;
+    this.records_to_link = [];
+
+    let observables = this.related_datasets.map((d: any) => this.api.datasetRecords(d.uuid).pipe(take(1)))
+    forkJoin(observables).subscribe((results: any) => {
+      this.records_to_link = results.flat(1);
+      this.records_available = true;
+    })
+
+  }
+
+  cancelLinkRecordModal() {
+    this.link_record_modal.dismiss(null, 'cancel');
+  }
+  confirmLinkRecordModal(uuid: string) {
+    this.linkExistingRecord(uuid);
+    this.link_record_modal.dismiss(null, 'confirm');
+  }
+
+  linkExistingRecord(uuid: string) {
+    this.recordService.fetchLatestRecord(uuid).pipe(
+      switchMap((related_record_object: any) => {
+        if(this.recordHasChild(uuid)) {
+          return from(this.presentAlert('Cannot link the chosen record as it is already linked'));
+        } else {
+          let dataset;
+          for(let related_dataset of this.related_datasets) {
+            if(related_record_object.dataset_uuid == related_dataset.uuid) {
+              dataset = related_dataset;
+              break;
+            }
+          }
+          if(!dataset) {
+            throw new Error('Cannot find dataset for record ' + uuid)
+          }
+          this.related_records_form_array.push(this.convertRecordObjectToForm(related_record_object, dataset));
+          return this.saveDraft();
+        }
+      })
+    ).subscribe();
+  }
+
+  private recordHasChild(uuid: string) {
+    let record_object = this.convertFormToRecordObject(this.form);
+    for(let related_record_object of record_object.related_records) {
+      if(related_record_object.uuid == uuid) {
+        return true;
+      }
+    }
+    return false;
   }
 
   get fields_form_array(): FormArray {
@@ -178,5 +236,15 @@ export class RecordComponent implements OnInit {
     return form as FormGroup;
   }
 
+  private async presentAlert(message: string) {
+    const alert = await this.alertController.create({
+      header: 'Alert',
+      subHeader: '',
+      message,
+      buttons: ['OK'],
+    });
+
+    await alert.present();
+  }
 
 }
