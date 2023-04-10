@@ -1,7 +1,9 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { EMPTY, Observable, of, switchMap } from 'rxjs';
+import { EMPTY, Observable, from, of, switchMap } from 'rxjs';
 import { DatasetService } from '../../api/dataset.service';
+import { ApiService } from 'src/app/api/api.service';
+import { AlertController, IonModal } from '@ionic/angular';
 
 @Component({
   selector: 'dataset-edit',
@@ -20,7 +22,13 @@ export class DatasetComponent implements OnInit {
   @Output()
   remove: EventEmitter<void> = new EventEmitter<void>();
 
-  constructor(private _fb: FormBuilder, private datasetService: DatasetService) {}
+  @ViewChild(IonModal) link_dataset_modal!: IonModal;
+
+  datasets_available = false;
+  datasets_to_link: any = [];
+
+  constructor(private _fb: FormBuilder, private datasetService: DatasetService, private api: ApiService,
+    private alertController: AlertController) {}
 
   ngOnInit() {
     // if(!this.form.contains('dataset_uuid')) {
@@ -64,6 +72,60 @@ export class DatasetComponent implements OnInit {
         return this.saveDraft();
       })
     ).subscribe();
+  }
+
+  loadDatasetsAvailableToLink(){
+    this.datasets_available = false;
+    this.datasets_to_link = [];
+    this.api.userDatasets().subscribe(datasets => {
+      this.datasets_to_link = datasets;
+      this.datasets_available = true;
+    });
+  }
+
+  cancelLinkDatasetModal() {
+    this.link_dataset_modal.dismiss(null, 'cancel');
+  }
+  confirmLinkDatasetModal(uuid: string) {
+    this.linkExistingDataset(uuid);
+    this.link_dataset_modal.dismiss(null, 'confirm');
+  }
+
+  linkExistingDataset(uuid: string) {
+    this.datasetService.fetchLatestDatasetAndTemplate(uuid).pipe(
+      switchMap((related_dataset_object: any) => {
+        if(this.datasetHasChild(this.uuid.value)) {
+          return from(this.presentAlert('Cannot link the chosen dataset as it is already linked'));
+        }else if(DatasetComponent.hasCircularDependency(related_dataset_object, this.uuid.value)) {
+          return from(this.presentAlert('Cannot link the chosen dataset as it would cause a circular dependency'));
+        } else {
+          this.related_datasets_form_array.push(this.convertDatasetObjectToForm(related_dataset_object));
+          return this.saveDraft();
+        }
+      })
+    ).subscribe();
+  }
+
+  private datasetHasChild(uuid: string) {
+    let dataset_object = this.convertFormToDatasetObject(this.form);
+    for(let related_dataset_object of dataset_object.related_datasets) {
+      if(related_dataset_object.dataset_uuid == uuid) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static hasCircularDependency(dataset_object: any, uuid: string) {
+    if(dataset_object.dataset_uuid == uuid) {
+      return true;
+    }
+    for(let related_dataset_object of dataset_object.related_datasets) {
+      if(DatasetComponent.hasCircularDependency(related_dataset_object, uuid)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   get fields_form_array(): FormArray {
@@ -158,4 +220,14 @@ export class DatasetComponent implements OnInit {
     this.form.addControl('related_datasets', new_form.get('related_datasets'));
   }
 
+  private async presentAlert(message: string) {
+    const alert = await this.alertController.create({
+      header: 'Alert',
+      subHeader: '',
+      message,
+      buttons: ['OK'],
+    });
+
+    await alert.present();
+  }
 }

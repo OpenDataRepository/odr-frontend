@@ -33,6 +33,35 @@
     <ion-item lines="none">
       <ion-button (click)="addRelatedDataset()">New Dataset</ion-button>
     </ion-item>
+    <div>
+      <ion-item  lines="none">
+        <ion-button [attr.id]="'link-existing-dataset-' + uuid?.value" (click)="loadDatasetsAvailableToLink()">Link Existing Dataset</ion-button>
+      </ion-item>
+      <ion-modal [attr.trigger]="'link-existing-dataset-' + uuid?.value">
+        <ng-template>
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-button (click)="cancelLinkDatasetModal()">Cancel</ion-button>
+              </ion-buttons>
+              <ion-title>Select a dataset to link</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content class="ion-padding">
+            <ion-item *ngIf="!datasets_available">
+              <ion-spinner></ion-spinner>
+            </ion-item>
+            <div *ngIf="datasets_available">
+              <ion-list>
+                <ion-item *ngFor="let dataset of datasets_to_link" lines="none"
+                [button]="true" [detail]="false" (click)="confirmLinkDatasetModal(dataset.uuid)"
+                >{{ dataset.name }}</ion-item>
+              </ion-list>
+            </div>
+          </ion-content>
+        </ng-template>
+      </ion-modal>
+    </div>
   </div>
 
   <ion-item *ngIf="!is_top_level_dataset">
