@@ -1,6 +1,8 @@
 <div class="ion-margin border">
   <ion-item lines="inset">
     <ion-label>Name: {{ dataset.name }}</ion-label>
+    <ion-button *ngIf="public" slot="end" color="success" disabled="true">Public</ion-button>
+    <ion-button *ngIf="!public" slot="end" color="danger" disabled="true">Private</ion-button>
   </ion-item>
   <ion-item lines="inset">
     <ion-label>uuid: {{ dataset.dataset_uuid }}</ion-label>

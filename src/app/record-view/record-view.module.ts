@@ -9,6 +9,7 @@ import { RecordViewPageRoutingModule } from './record-view-routing.module';
 import { RecordViewPage } from './record-view.page';
 import { HeaderModule } from '../header/header.module';
 import { RecordComponent } from './record/record.component';
+import { ActivatedRoute } from '@angular/router';
 
 @NgModule({
   imports: [
@@ -18,6 +19,7 @@ import { RecordComponent } from './record/record.component';
     RecordViewPageRoutingModule,
     HeaderModule
   ],
-  declarations: [RecordViewPage, RecordComponent]
+  declarations: [RecordViewPage, RecordComponent],
+  providers: [ActivatedRoute]
 })
 export class RecordViewPageModule {}

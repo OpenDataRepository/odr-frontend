@@ -27,13 +27,11 @@ export class DatasetService {
     let split_dataset_template = this.splitTemplateAndDataset(combined_dataset_template);
     let template = split_dataset_template.template;
     let dataset = split_dataset_template.dataset;
-    let updated_template: any;
     return this.api.updateTemplate(template).pipe(
       switchMap(() => {
         return this.fetchLatestTemplate(template.uuid)
       }),
       switchMap((new_template: any) => {
-        updated_template = new_template;
         return this.modifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset, new_template);
       }),
       switchMap((dataset) => {
@@ -57,8 +55,8 @@ export class DatasetService {
   fetchLatestDatasetAndTemplate(dataset_uuid: string) {
     return this.fetchSyncedDatasetAndTemplateDraft(dataset_uuid).pipe(
       catchError(error => {
-        if(error.status == 404) {
-          return this.fetchPersistedDatasetAndTemplateDraft(dataset_uuid);
+        if(error.status == 404 || error.status == 401) {
+          return this.fetchPersistedDatasetAndTemplate(dataset_uuid);
         } else {
           return throwError(() => error);
         }
@@ -81,7 +79,7 @@ export class DatasetService {
     )
   }
 
-  private fetchPersistedDatasetAndTemplateDraft(dataset_uuid: string) {
+  private fetchPersistedDatasetAndTemplate(dataset_uuid: string) {
     let return_dataset: any;
     return this.api.fetchDatasetLatestPersisted(dataset_uuid).pipe(
       switchMap((dataset: any) => {
@@ -170,6 +168,10 @@ export class DatasetService {
       template_uuid: combined.template_uuid,
       related_datasets: []
     };
+    if(combined.public_date) {
+      template.public_date = combined.public_date;
+      dataset.public_date = combined.public_date;
+    }
     for(let child of combined.related_datasets) {
       let separated_child = this.splitTemplateAndDataset(child);
       template.related_templates.push(separated_child.template);
@@ -203,6 +205,7 @@ export class DatasetService {
       name: dataset.name,
       dataset_updated_at: dataset.updated_at,
       template_updated_at: template.updated_at,
+      public_date: template.public_date ? template.public_date : dataset.public_date ? dataset.public_date : undefined,
       dataset_persist_date: dataset.persist_date,
       fields: template.fields,
       related_datasets

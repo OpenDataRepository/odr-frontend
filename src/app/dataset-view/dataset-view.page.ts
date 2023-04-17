@@ -4,6 +4,8 @@ import { ViewWillEnter } from '@ionic/angular';
 import { of, switchMap } from 'rxjs';
 import { ApiService } from '../api/api.service';
 import { DatasetService } from '../api/dataset.service';
+import { PermissionService } from '../api/permission.service';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-dataset-view',
@@ -15,9 +17,11 @@ export class DatasetViewPage implements OnInit, ViewWillEnter {
   uuid: string = "";
   dataset: any = {};
   has_persisted_version = false;
+  has_edit_permission = false;
 
   constructor(private route: ActivatedRoute, private router: Router,
-    private datasetService: DatasetService, private api: ApiService) { }
+    private datasetService: DatasetService, private api: ApiService,
+    private permissionService: PermissionService, private auth: AuthService) { }
 
   ngOnInit(): void {
 
@@ -37,6 +41,10 @@ export class DatasetViewPage implements OnInit, ViewWillEnter {
           this.router.navigateByUrl('/404', {skipLocationChange: true})
           return;
         }
+        if(err.status == 401) {
+          this.auth.send401OrRedirectToLogin();
+          return;
+        }
         console.log('HTTP Error', err)
         this.datasetService.fetchLatestDatasetAndTemplate(this.uuid).subscribe({
           next: (dataset: any) => { this.dataset = dataset; },
@@ -54,6 +62,12 @@ export class DatasetViewPage implements OnInit, ViewWillEnter {
     this.api.fetchDatasetLatestPersisted(this.uuid).subscribe({
       next: () => { this.has_persisted_version = true; },
       error: () => { this.has_persisted_version = false; }
+    })
+
+    this.permissionService.hasPermission(this.uuid, ApiService.PermissionType.Edit).subscribe(result => {
+      if(result) {
+        this.has_edit_permission = true;
+      }
     })
   }
 

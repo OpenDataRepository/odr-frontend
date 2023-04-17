@@ -4,6 +4,7 @@ import { IonicModule } from '@ionic/angular';
 import { AuthService } from '../auth.service';
 
 import { LogInPage } from './log-in.page';
+import { Component } from '@angular/core';
 
 describe('LogInPage', () => {
   let component: LogInPage;
@@ -12,9 +13,18 @@ describe('LogInPage', () => {
   class MockAuthService {
   }
 
+  @Component({
+    selector: 'app-header',
+    template: '<p>Mock App header</p>'
+  })
+  class MockAppHeader {}
+
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ LogInPage ],
+      declarations: [
+        LogInPage,
+        MockAppHeader
+      ],
       providers: [
         LogInPage,
         { provide: AuthService, useClass: MockAuthService }

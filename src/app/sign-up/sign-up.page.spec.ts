@@ -4,6 +4,7 @@ import { IonicModule } from '@ionic/angular';
 import { AuthService } from '../auth.service';
 
 import { SignUpPage } from './sign-up.page';
+import { Component } from '@angular/core';
 
 describe('SignUpPage', () => {
   let component: SignUpPage;
@@ -12,11 +13,19 @@ describe('SignUpPage', () => {
   class MockAuthService {
   }
 
+  @Component({
+    selector: 'app-header',
+    template: '<p>Mock App header</p>'
+  })
+  class MockAppHeader {}
+
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ SignUpPage ],
-      providers: [
+      declarations: [
         SignUpPage,
+        MockAppHeader
+      ],
+      providers: [
         { provide: AuthService, useClass: MockAuthService }
       ],
       imports: [IonicModule.forRoot(), FormsModule]

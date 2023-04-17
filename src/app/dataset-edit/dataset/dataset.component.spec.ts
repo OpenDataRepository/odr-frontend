@@ -1,16 +1,17 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { FormBuilder } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { DatasetService } from 'src/app/api/dataset.service';
 
 import { DatasetComponent } from './dataset.component';
 import { of } from 'rxjs';
+import { ApiService } from 'src/app/api/api.service';
 
 describe('DatasetEditComponent', () => {
   let component: DatasetComponent;
   let fixture: ComponentFixture<DatasetComponent>;
 
-  class FormBuilderMock {
+  class ApiServiceMock {
   }
 
   const datasetService = jasmine.createSpyObj('DatasetService', ['updateDatasetAndTemplate', 'fetchLatestDatasetAndTemplate']);
@@ -28,11 +29,15 @@ describe('DatasetEditComponent', () => {
     TestBed.configureTestingModule({
       declarations: [ DatasetComponent ],
       providers: [
-        DatasetComponent,
-        { provide: FormBuilder, useClass: FormBuilderMock },
+        FormBuilder,
         { provide: DatasetService, useValue: datasetService },
+        { provide: ApiService, useClass: ApiServiceMock },
+        FormBuilder
       ],
-      imports: [IonicModule.forRoot()]
+      imports: [
+        IonicModule.forRoot(),
+        ReactiveFormsModule
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(DatasetComponent);
@@ -46,6 +51,14 @@ describe('DatasetEditComponent', () => {
 
   describe('saveDraft', () => {
     it('if saveDraft has no changes from last persisted, pass silently', () => {
+      component.form = new FormGroup({
+        name: new FormControl(),
+        dataset_uuid: new FormControl(),
+        template_uuid: new FormControl(),
+        template_id: new FormControl(),
+        fields: new FormArray([]),
+        related_datasets: new FormArray([]),
+      });
       fixture.detectChanges();
       expect(component).toBeTruthy();
       component.saveDraft().subscribe();

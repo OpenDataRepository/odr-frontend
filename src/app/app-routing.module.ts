@@ -40,6 +40,10 @@ const routes: Routes = [
     loadChildren: () => import('./record-view/record-view.module').then( m => m.RecordViewPageModule)
   },
   {
+    path: 'permission-denied',
+    loadChildren: () => import('./permission-denied/permission-denied.module').then( m => m.PermissionDeniedPageModule)
+  },
+  {
     path: '**',
     loadChildren: () => import('./not-found/not-found.module').then( m => m.NotFoundPageModule)
   }

@@ -1,13 +1,12 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { IonicModule } from '@ionic/angular';
 
-import { NotFoundPage } from './not-found.page';
+import { PermissionDeniedPage } from './permission-denied.page';
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
 
-describe('NotFoundPage', () => {
-  let component: NotFoundPage;
-  let fixture: ComponentFixture<NotFoundPage>;
+describe('PermissionDeniedPage', () => {
+  let component: PermissionDeniedPage;
+  let fixture: ComponentFixture<PermissionDeniedPage>;
 
   @Component({
     selector: 'app-header',
@@ -18,16 +17,13 @@ describe('NotFoundPage', () => {
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [
-        NotFoundPage,
+        PermissionDeniedPage,
         MockAppHeader
       ],
-      imports: [
-        IonicModule.forRoot(),
-        RouterModule
-      ]
+      imports: [IonicModule.forRoot()]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(NotFoundPage);
+    fixture = TestBed.createComponent(PermissionDeniedPage);
     component = fixture.componentInstance;
     fixture.detectChanges();
   }));

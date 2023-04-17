@@ -7,10 +7,10 @@
   <ion-toolbar>
     <ion-grid>
       <ion-row class="ion-text-center">
-        <ion-col>
+        <ion-col *ngIf="has_edit_permission">
           <ion-button expand="block" [routerLink]="['/dataset-edit',uuid]">Edit</ion-button>
         </ion-col>
-        <ion-col>
+        <ion-col *ngIf="has_edit_permission">
           <ion-button expand="block" (click)="persist()" [disabled]="dataset && persisted">Save as Version</ion-button>
         </ion-col>
         <ion-col>

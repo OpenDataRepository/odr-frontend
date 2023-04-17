@@ -69,6 +69,7 @@ export class RecordComponent implements OnInit {
 
     let observables = this.related_datasets.map((d: any) => this.api.datasetRecords(d.uuid).pipe(take(1)))
     forkJoin(observables).subscribe((results: any) => {
+      // TODO: consider removing related_records already on the record
       this.records_to_link = results.flat(1);
       this.records_available = true;
     })

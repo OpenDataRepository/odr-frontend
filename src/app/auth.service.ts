@@ -1,9 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, from, map, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, from, map, of, switchMap, take, tap } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { User } from './user.model';
 import { Preferences } from '@capacitor/preferences';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,7 @@ export class AuthService {
   private userEmitter = new BehaviorSubject<User|null>(null);
   private activeLogoutTimer: any;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private router: Router) { }
 
   signUp(email: string, password: string) {
     return this.http
@@ -149,6 +150,26 @@ export class AuthService {
           return user.token;
         } else {
           return null;
+        }
+      })
+    );
+  }
+
+  send401OrRedirectToLogin() {
+    this.userIsAuthenticated.pipe(
+      take(1),
+      switchMap((isAuthenticated) => {
+        if (!isAuthenticated) {
+          return this.autoLogin();
+        } else {
+          return of(isAuthenticated);
+        }
+      }),
+      tap(isAuthenticated => {
+        if (!isAuthenticated) {
+          this.router.navigateByUrl('/log-in');
+        } else {
+          this.router.navigateByUrl('/401', {skipLocationChange: true});
         }
       })
     );

@@ -1,11 +1,13 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 import { of, throwError } from 'rxjs';
 import { ApiService } from '../api/api.service';
 import { RecordService } from '../api/record.service';
 
 import { RecordViewPage } from './record-view.page';
+import { Component } from '@angular/core';
+import { RecordComponent } from './record/record.component';
 
 describe('RecordViewPage', () => {
   let component: RecordViewPage;
@@ -41,16 +43,28 @@ describe('RecordViewPage', () => {
     }
   }
 
+  @Component({
+    selector: 'app-header',
+    template: '<p>Mock App header</p>'
+  })
+  class MockAppHeader {}
+
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ RecordViewPage ],
-      providers: [
+      declarations: [
         RecordViewPage,
+        RecordComponent,
+        MockAppHeader
+      ],
+      providers: [
         { provide: ActivatedRoute, useClass: ActivatedRouteMock },
         { provide: RecordService, useClass: RecordServiceMock },
         { provide: ApiService, useClass: ApiServiceMock },
       ],
-      imports: [IonicModule.forRoot()]
+      imports: [
+        IonicModule.forRoot(),
+        RouterModule
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecordViewPage);

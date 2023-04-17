@@ -1,13 +1,12 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { AuthGuard } from '../auth.guard';
 
-import { DatasetViewPage } from './dataset-view.page';
+import { PermissionDeniedPage } from './permission-denied.page';
 
 const routes: Routes = [
   {
-    path: ':uuid',
-    component: DatasetViewPage
+    path: '',
+    component: PermissionDeniedPage
   }
 ];
 
@@ -15,4 +14,4 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule],
 })
-export class DatasetViewPageRoutingModule {}
+export class PermissionDeniedPageRoutingModule {}

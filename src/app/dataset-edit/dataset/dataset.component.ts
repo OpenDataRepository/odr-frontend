@@ -24,8 +24,10 @@ export class DatasetComponent implements OnInit {
 
   @ViewChild(IonModal) link_dataset_modal!: IonModal;
 
-  datasets_available = false;
-  datasets_to_link: any = [];
+  user_datasets_loaded = false;
+  public_datasets_loaded = false;
+  user_datasets_to_link: any = [];
+  public_datasets_to_link: any = [];
 
   constructor(private _fb: FormBuilder, private datasetService: DatasetService, private api: ApiService,
     private alertController: AlertController) {}
@@ -36,6 +38,14 @@ export class DatasetComponent implements OnInit {
     //     this.form = this.convertDatasetObjectToForm(dataset_object);
     //   });
     // }
+  }
+
+  makePublic() {
+    this.form.addControl('public_date', new FormControl((new Date()).toISOString()));
+  }
+
+  makePrivate() {
+    this.form.removeControl('public_date');
   }
 
   deleteField(index: number) {
@@ -75,11 +85,20 @@ export class DatasetComponent implements OnInit {
   }
 
   loadDatasetsAvailableToLink(){
-    this.datasets_available = false;
-    this.datasets_to_link = [];
+    this.user_datasets_loaded = false;
+    this.user_datasets_to_link = [];
     this.api.userDatasets().subscribe(datasets => {
-      this.datasets_to_link = datasets;
-      this.datasets_available = true;
+      // TODO: consider removing dataset and decendant datasets
+      this.user_datasets_to_link = datasets;
+      this.user_datasets_loaded = true;
+    });
+
+    this.public_datasets_loaded = false;
+    this.public_datasets_to_link = [];
+    this.api.publicDatasets().subscribe(datasets => {
+      // TODO: consider removing dataset and decendant datasets
+      this.public_datasets_to_link = datasets;
+      this.public_datasets_loaded = true;
     });
   }
 
@@ -140,6 +159,8 @@ export class DatasetComponent implements OnInit {
 
   get uuid() { return this.form.get('dataset_uuid'); }
 
+  get public_date() { return this.form.get('public_date'); }
+
   saveDraft() {
     let dataset_object = this.convertFormToDatasetObject(this.form as FormGroup);
     return this.datasetService.updateDatasetAndTemplate(dataset_object).pipe(
@@ -169,6 +190,7 @@ export class DatasetComponent implements OnInit {
       template_uuid: form.get('template_uuid')?.value,
       template_id: form.get('template_id')?.value,
       name: form.get('name') ? form.get('name')?.value : "",
+      public_date: form.get('public_date') ? form.get('public_date')?.value : undefined,
       fields,
       related_datasets
     };
@@ -186,7 +208,7 @@ export class DatasetComponent implements OnInit {
   }
 
   public convertDatasetObjectToForm(dataset_object: any) {
-    let form = this._fb.group({
+    let form: FormGroup = this._fb.group({
       dataset_uuid: dataset_object.dataset_uuid,
       template_uuid: dataset_object.template_uuid,
       template_id: dataset_object.template_id,
@@ -194,6 +216,9 @@ export class DatasetComponent implements OnInit {
       fields: this._fb.array([]),
       related_datasets: this._fb.array([])
     })
+    if(dataset_object.public_date) {
+      form.addControl('public_date', new FormControl(dataset_object.public_date));
+    }
     for(let field of dataset_object.fields) {
       (form.get("fields") as FormArray).push(this._fb.group({
         uuid: new FormControl(field.uuid),
@@ -212,6 +237,18 @@ export class DatasetComponent implements OnInit {
     this.form.controls['template_uuid'].setValue(new_form.get('template_uuid')?.value);
     this.form.controls['template_id'].setValue(new_form.get('template_id')?.value);
     this.form.controls['name'].setValue(new_form.get('name')?.value);
+
+    if(new_form.contains('public_date')) {
+      if(this.form.contains('public_date')) {
+        this.form.controls['public_date'].setValue(new_form.get('public_date')?.value);
+      } else {
+        this.form.addControl('public_date', new FormControl(new_form.get('public_date')?.value))
+      }
+    } else {
+      try {
+        this.form.removeControl('public_date');
+      } catch (err) {}
+    }
 
     this.form.removeControl('fields');
     this.form.addControl('fields', new_form.get('fields'));

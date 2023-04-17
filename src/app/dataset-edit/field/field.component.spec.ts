@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 
 import { FieldComponent } from './field.component';
@@ -11,19 +11,20 @@ describe('FieldComponent', () => {
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ FieldComponent ],
-      providers: [
-        FieldComponent
-      ],
-      imports: [IonicModule.forRoot()]
+      providers: [],
+      imports: [
+        IonicModule.forRoot(),
+        ReactiveFormsModule
+      ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(FieldComponent);
-    component = fixture.componentInstance;
-    component.form = new FormGroup({});
-    fixture.detectChanges();
   }));
 
   it('should create', () => {
+    fixture = TestBed.createComponent(FieldComponent);
+    component = fixture.componentInstance;
+    component.form = new FormGroup({name: new FormControl(), description: new FormControl()});
+    fixture.detectChanges();
     expect(component).toBeTruthy();
   });
 });

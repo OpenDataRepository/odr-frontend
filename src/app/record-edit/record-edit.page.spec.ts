@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { FormBuilder } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 import { of } from 'rxjs';
@@ -74,14 +74,16 @@ describe('RecordEditPage', () => {
         , AppHeaderStubComponent
       ],
       providers: [
-        RecordEditPage,
         RecordComponent,
         { provide: ActivatedRoute, useClass: ActivatedRouteMock },
         { provide: ApiService, useClass: ApiServiceMock },
         { provide: RecordService, useClass: RecordServiceMock },
         FormBuilder
       ],
-      imports: [IonicModule.forRoot()]
+      imports: [
+        IonicModule.forRoot(),
+        ReactiveFormsModule
+      ]
     }).compileComponents();
 
     let sub_fixture = TestBed.createComponent(RecordComponent);

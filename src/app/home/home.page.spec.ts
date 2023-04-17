@@ -5,6 +5,7 @@ import { ApiService } from '../api/api.service';
 import { AuthService } from '../auth.service';
 
 import { HomePage } from './home.page';
+import { Component } from '@angular/core';
 
 describe('HomePage', () => {
   let component: HomePage;
@@ -17,11 +18,19 @@ describe('HomePage', () => {
     autoLogin = () => {return of(false)}
   }
 
+  @Component({
+    selector: 'app-header',
+    template: '<p>Mock App header</p>'
+  })
+  class MockAppHeader {}
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [HomePage],
-      providers: [
+      declarations: [
         HomePage,
+        MockAppHeader
+      ],
+      providers: [
         { provide: AuthService, useClass: MockAuthService },
         { provide: ApiService, useClass: MockApiService }
       ],

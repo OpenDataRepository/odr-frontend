@@ -16,7 +16,8 @@ export class HomePage implements OnInit, ViewWillEnter {
   @ViewChild(HeaderComponent) header: HeaderComponent|undefined;
 
   isLoggedIn = false;
-  datasets: any = [];
+  user_datasets: any = [];
+  public_datasets: any = [];
 
   constructor(private api: ApiService, private auth: AuthService,
     private datasetService: DatasetService, private toastController: ToastController) {}
@@ -43,25 +44,28 @@ export class HomePage implements OnInit, ViewWillEnter {
           return of([]);
         }
       })
-    ).subscribe(datasets => {
-      this.datasets = datasets;
+    ).subscribe(user_datasets => {
+      this.user_datasets = user_datasets;
     });
+    this.api.publicDatasets().subscribe(public_datasets => {
+      this.public_datasets = public_datasets;
+    })
   }
   deleteDraft(index: number) {
-    let dataset = this.datasets[index];
+    let dataset = this.user_datasets[index];
     this.datasetService.deleteDatasetTemplateDraft(dataset.uuid).subscribe(() => {
       this.presentToast();
       this.api.fetchDatasetLatestPersisted(dataset.uuid).pipe(
         catchError(err => {
           if(err.status == 404) {
-            this.datasets.splice(index, 1);
+            this.user_datasets.splice(index, 1);
             return EMPTY;
           } else {
             return throwError(() => err);
           }
         })
       ).subscribe(new_dataset => {
-        this.datasets[index] = new_dataset;
+        this.user_datasets[index] = new_dataset;
       });
     })
 
