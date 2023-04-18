@@ -20,4 +20,16 @@ export class FieldComponent implements OnInit {
 
   get name() { return this.form.get('name'); }
 
+  get uuid() { return this.form.get('uuid'); }
+
+  get public_date() { return this.form.get('public_date'); }
+
+  makePublic() {
+    this.form.addControl('public_date', new FormControl((new Date()).toISOString()));
+  }
+
+  makePrivate() {
+    this.form.removeControl('public_date');
+  }
+
 }

@@ -188,14 +188,18 @@ export class DatasetService {
       throw new Error(`Dataset ${dataset.uuid} has wrong template_id. Is ${dataset.template_id}. Should be ${template._id}`);
     }
     let template_map: any = {};
-    for(let related_template of template.related_templates) {
-      template_map[related_template._id] = related_template;
+    if(template.related_templates) {
+      for(let related_template of template.related_templates) {
+        template_map[related_template._id] = related_template;
+      }
     }
     let related_datasets: any = [];
-    for(let related_dataset of dataset.related_datasets) {
-      try {
-        related_datasets.push(this.combineTemplateAndDataset(template_map[related_dataset.template_id], related_dataset));
-      } catch (err){ console.log(err); console.log('removing reference to dataset ' + related_dataset.uuid); }
+    if(dataset.related_datasets) {
+      for(let related_dataset of dataset.related_datasets) {
+        try {
+          related_datasets.push(this.combineTemplateAndDataset(template_map[related_dataset.template_id], related_dataset));
+        } catch (err){ console.log(err); console.log('removing reference to dataset ' + related_dataset.uuid); }
+      }
     }
     return {
       dataset_uuid: dataset.uuid,

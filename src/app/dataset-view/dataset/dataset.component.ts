@@ -18,6 +18,10 @@ export class DatasetComponent implements OnInit {
     return !!this.dataset?.public_date;
   }
 
+  get hasViewPermission(): boolean {
+    return !!this.dataset?.dataset_updated_at;
+  }
+
   constructor() { }
 
   ngOnInit() {}

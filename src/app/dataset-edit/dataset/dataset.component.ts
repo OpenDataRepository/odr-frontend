@@ -204,6 +204,9 @@ export class DatasetComponent implements OnInit {
     if(form.get('uuid')) {
       field.uuid = form.get('uuid')?.value;
     }
+    if(form.get('public_date')) {
+      field.public_date = form.get('public_date')?.value;
+    }
     return field;
   }
 
@@ -220,11 +223,15 @@ export class DatasetComponent implements OnInit {
       form.addControl('public_date', new FormControl(dataset_object.public_date));
     }
     for(let field of dataset_object.fields) {
-      (form.get("fields") as FormArray).push(this._fb.group({
+      let field_form: FormGroup = this._fb.group({
         uuid: new FormControl(field.uuid),
         name: new FormControl(field.name, [Validators.required]),
         description: new FormControl(field.description)
-      }));
+      });
+      if(field.public_date) {
+        field_form.addControl('public_date', new FormControl(field.public_date));
+      }
+      (form.get("fields") as FormArray).push(field_form);
     }
     for(let related_dataset of dataset_object.related_datasets) {
       (form.get("related_datasets") as FormArray).push(this.convertDatasetObjectToForm(related_dataset));

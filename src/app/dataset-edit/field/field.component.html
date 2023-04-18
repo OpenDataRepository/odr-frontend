@@ -1,8 +1,13 @@
 <form class="ion-margin" [ngClass]="{'border': form.valid, 'invalid-border': !form.valid}" [formGroup]="form">
   <ion-item lines="inset">
     <ion-label>Name:</ion-label>
+    <ion-button *ngIf="public_date" slot="end" color="success" (click)="makePrivate()">Public</ion-button>
+    <ion-button *ngIf="!public_date" slot="end" color="danger" (click)="makePublic()">Private</ion-button>
     <ion-input formControlName="name" placeholder="Enter name here..."></ion-input>
     <ion-note slot="error">Name is required</ion-note>
+  </ion-item>
+  <ion-item lines="inset">
+    <ion-label>uuid: {{ uuid?.value }}</ion-label>
   </ion-item>
   <ion-item lines="inset">
     <ion-label>Description:</ion-label>
