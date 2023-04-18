@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, from, map, of, switchMap, take, tap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, from, map, of, switchMap, take, tap } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { User } from './user.model';
 import { Preferences } from '@capacitor/preferences';
@@ -119,17 +119,21 @@ export class AuthService {
     Preferences.set({ key: 'authData', value: data });
   }
 
-  get userIsAuthenticated() {
+  get userIsAuthenticated(): Observable<boolean> {
     return this.userEmitter.asObservable().pipe(
-      map(user => {
+      switchMap((user: any) => {
         if (user) {
-          return !!user.token;
+          return of(!!user.token);
         } else {
-          return false;
+          return this.autoLogin().pipe(
+            map((user: any) => !!user?.token as boolean),
+            catchError(() => of(false))
+          );
         }
       })
     );
   }
+
 
   get email() {
     return this.userEmitter.asObservable().pipe(
