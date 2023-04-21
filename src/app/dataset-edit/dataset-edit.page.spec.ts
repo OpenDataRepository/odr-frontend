@@ -10,6 +10,7 @@ import { DatasetEditPage } from './dataset-edit.page';
 import { DatasetComponent } from './dataset/dataset.component';
 import { ApiService } from '../api/api.service';
 import { HeaderComponent } from '../header/header.component';
+import { PermissionService } from '../api/permission.service';
 
 describe('DatasetEditPage', () => {
   let component: DatasetEditPage;
@@ -45,6 +46,12 @@ describe('DatasetEditPage', () => {
   class ApiServiceMock {
   }
 
+  class PermissionServiceMock {
+    hasPermission = (uuid: string, permission: string ) => {
+      return of(true);
+    }
+  }
+
   @Component({
     selector: 'app-header',
     template: '<p>Mock App header</p>'
@@ -62,7 +69,8 @@ describe('DatasetEditPage', () => {
         { provide: ActivatedRoute, useClass: ActivatedRouteMock },
         { provide: DatasetService, useClass: DatasetServiceMock },
         { provide: ApiService, useClass: ApiServiceMock },
-        FormBuilder
+        FormBuilder,
+        { provide: PermissionService, useClass: PermissionServiceMock }
       ],
       imports: [
         IonicModule.forRoot(),

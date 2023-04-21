@@ -1,19 +1,24 @@
-<form class="ion-margin" [ngClass]="{'border': form.valid, 'invalid-border': !form.valid}" [formGroup]="form">
-  <ion-item lines="inset">
-    <ion-label>Name:</ion-label>
-    <ion-button *ngIf="public_date" slot="end" color="success" (click)="makePrivate()">Public</ion-button>
-    <ion-button *ngIf="!public_date" slot="end" color="danger" (click)="makePublic()">Private</ion-button>
-    <ion-input formControlName="name" placeholder="Enter name here..."></ion-input>
-    <ion-note slot="error">Name is required</ion-note>
-  </ion-item>
+<form class="ion-margin"
+  [ngClass]="{'gray-border': !may_edit, 'border': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}"
+  [formGroup]="form">
+
   <ion-item lines="inset">
     <ion-label>uuid: {{ uuid?.value }}</ion-label>
+    <ion-button *ngIf="public_date" slot="end" color="success" (click)="makePrivate()" [disabled]="!may_edit">Public</ion-button>
+    <ion-button *ngIf="!public_date" slot="end" color="danger" (click)="makePublic()" [disabled]="!may_edit">Private</ion-button>
   </ion-item>
-  <ion-item lines="inset">
-    <ion-label>Description:</ion-label>
-    <ion-input formControlName="description" placeholder="Enter description here..."></ion-input>
-  </ion-item>
-  <ion-item>
-    <ion-button (click)="remove.emit()" color="danger">Delete Field</ion-button>
+  <div *ngIf="!uuid || public_date || updated_at">
+    <ion-item lines="inset" [style.--highlight-height]="may_edit ? '2px' : '0px'">
+      <ion-label>Name:</ion-label>
+      <ion-input formControlName="name" [placeholder]="may_edit ? 'Enter name here...' : ''" [readonly]="!may_edit"></ion-input>
+      <ion-note slot="error">Name is required</ion-note>
+    </ion-item>
+    <ion-item lines="inset" [style.--highlight-height]="may_edit ? '2px' : '0px'">
+      <ion-label>Description:</ion-label>
+      <ion-input formControlName="description" [placeholder]="may_edit ? 'Enter name here...' : ''" [readonly]="!may_edit"></ion-input>
+    </ion-item>
+  </div>
+  <ion-item *ngIf="!disabled">
+    <ion-button (click)="remove.emit()" color="danger">Remove Field</ion-button>
   </ion-item>
 </form>

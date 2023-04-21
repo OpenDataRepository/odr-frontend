@@ -6,12 +6,16 @@ import { DatasetService } from 'src/app/api/dataset.service';
 import { DatasetComponent } from './dataset.component';
 import { of } from 'rxjs';
 import { ApiService } from 'src/app/api/api.service';
+import { PermissionService } from 'src/app/api/permission.service';
 
 describe('DatasetEditComponent', () => {
   let component: DatasetComponent;
   let fixture: ComponentFixture<DatasetComponent>;
 
   class ApiServiceMock {
+  }
+
+  class PermissionServiceMock {
   }
 
   const datasetService = jasmine.createSpyObj('DatasetService', ['updateDatasetAndTemplate', 'fetchLatestDatasetAndTemplate']);
@@ -32,7 +36,7 @@ describe('DatasetEditComponent', () => {
         FormBuilder,
         { provide: DatasetService, useValue: datasetService },
         { provide: ApiService, useClass: ApiServiceMock },
-        FormBuilder
+        { provide: PermissionService, useClass: PermissionServiceMock }
       ],
       imports: [
         IonicModule.forRoot(),

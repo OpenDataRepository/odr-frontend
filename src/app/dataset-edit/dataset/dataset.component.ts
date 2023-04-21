@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { EMPTY, Observable, from, of, switchMap } from 'rxjs';
+import { from, of, switchMap } from 'rxjs';
 import { DatasetService } from '../../api/dataset.service';
+import { PermissionService } from '../../api/permission.service';
 import { ApiService } from 'src/app/api/api.service';
 import { AlertController, IonModal } from '@ionic/angular';
 
@@ -10,7 +11,7 @@ import { AlertController, IonModal } from '@ionic/angular';
   templateUrl: './dataset.component.html',
   styleUrls: ['./dataset.component.scss'],
 })
-export class DatasetComponent implements OnInit {
+export class DatasetComponent implements OnInit, OnChanges {
 
   @Input()
   is_top_level_dataset: boolean = false;
@@ -18,6 +19,9 @@ export class DatasetComponent implements OnInit {
   @Input()
   form: FormGroup|any = new FormGroup({name: new FormControl(), fields: new FormArray([]),
     related_datasets: new FormArray([])});
+
+  @Input()
+  disabled: boolean = false;
 
   @Output()
   remove: EventEmitter<void> = new EventEmitter<void>();
@@ -28,16 +32,20 @@ export class DatasetComponent implements OnInit {
   public_datasets_loaded = false;
   user_datasets_to_link: any = [];
   public_datasets_to_link: any = [];
+  edit_permission = false;
+  // permission_checked = false;
 
   constructor(private _fb: FormBuilder, private datasetService: DatasetService, private api: ApiService,
-    private alertController: AlertController) {}
+    private alertController: AlertController, private permissionService: PermissionService) {}
 
   ngOnInit() {
-    // if(!this.form.contains('dataset_uuid')) {
-    //   this.datasetService.newEmptyDatasetAndTemplate().subscribe(dataset_object => {
-    //     this.form = this.convertDatasetObjectToForm(dataset_object);
-    //   });
-    // }
+  }
+
+  ngOnChanges() {
+    if(!this.disabled && this.uuid) {
+      this.permissionService.hasPermission(this.uuid.value, 'edit').subscribe(result => {this.edit_permission = result as boolean;});
+      // this.permission_checked = true;
+    }
   }
 
   makePublic() {
@@ -161,6 +169,16 @@ export class DatasetComponent implements OnInit {
 
   get public_date() { return this.form.get('public_date'); }
 
+  get public(): boolean {
+    return !!this.public_date;
+  }
+
+  get hasViewPermission(): boolean {
+    return !!this.form.get('updated_at');
+  }
+
+  get may_edit() { return !this.disabled && this.edit_permission; }
+
   saveDraft() {
     let dataset_object = this.convertFormToDatasetObject(this.form as FormGroup);
     return this.datasetService.updateDatasetAndTemplate(dataset_object).pipe(
@@ -222,19 +240,29 @@ export class DatasetComponent implements OnInit {
     if(dataset_object.public_date) {
       form.addControl('public_date', new FormControl(dataset_object.public_date));
     }
-    for(let field of dataset_object.fields) {
-      let field_form: FormGroup = this._fb.group({
-        uuid: new FormControl(field.uuid),
-        name: new FormControl(field.name, [Validators.required]),
-        description: new FormControl(field.description)
-      });
-      if(field.public_date) {
-        field_form.addControl('public_date', new FormControl(field.public_date));
-      }
-      (form.get("fields") as FormArray).push(field_form);
+    if(dataset_object.dataset_updated_at) {
+      form.addControl('updated_at', new FormControl(dataset_object.dataset_updated_at));
     }
-    for(let related_dataset of dataset_object.related_datasets) {
-      (form.get("related_datasets") as FormArray).push(this.convertDatasetObjectToForm(related_dataset));
+    if(dataset_object.fields) {
+      for(let field of dataset_object.fields) {
+        let field_form: FormGroup = this._fb.group({
+          uuid: new FormControl(field.uuid),
+          name: new FormControl(field.name, [Validators.required]),
+          description: new FormControl(field.description),
+        });
+        if(field.public_date) {
+          field_form.addControl('public_date', new FormControl(field.public_date));
+        }
+        if(field.updated_at) {
+          field_form.addControl('updated_at', new FormControl(field.updated_at));
+        }
+        (form.get("fields") as FormArray).push(field_form);
+      }
+    }
+    if(dataset_object.related_datasets) {
+      for(let related_dataset of dataset_object.related_datasets) {
+        (form.get("related_datasets") as FormArray).push(this.convertDatasetObjectToForm(related_dataset));
+      }
     }
     return form;
   }
