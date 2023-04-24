@@ -396,8 +396,6 @@ export class ApiService {
     )
   }
 
-
-
   currentUserHasPermission(uuid: string, level: string) {
     return this.reqHeader()
     .pipe(

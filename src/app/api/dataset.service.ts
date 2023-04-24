@@ -112,7 +112,18 @@ export class DatasetService {
         return this.fetchLatestDataset(dataset_uuid);
       }),
       switchMap((dataset: any) => {
-        return this.modifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset, final_template);
+        if(dataset.persist_date && !final_template.persist_date) {
+          console.error(`fetchSyncedDatasetAndTemplateDraft: latest dataset is persisted \
+          but latest template is a draft. deleting template draft: ${final_template.uuid}`)
+            return this.api.deleteTemplateDraft(final_template.uuid).pipe(
+              switchMap(() => {
+                return of(dataset);
+              })
+            );
+        }
+        else {
+          return this.modifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset, final_template);
+        }
       }),
       switchMap((dataset: any) => {
         return this.api.updateDataset(dataset);
@@ -216,21 +227,25 @@ export class DatasetService {
     };
   }
 
-  private recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset: any, updated_template: any) {
-    if(dataset.template_id != updated_template._id) {
-      dataset.template_id = updated_template._id;
+  private recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset: { [key: string]: any }, updated_template: { [key: string]: any }) {
+    if(dataset['template_id'] != updated_template['_id']) {
+      dataset['template_id'] = updated_template['_id'];
     }
     let updated_template_map: any = {};
-    for(let related_template of updated_template.related_templates) {
-      updated_template_map[related_template.uuid] = related_template;
-    }
-    for(let related_dataset of dataset.related_datasets) {
-      if(!(related_dataset.template_uuid in updated_template_map)) {
-        throw new Error(`recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate: dataset ${related_dataset.uuid} references
-        template ${related_dataset.template_id}, which is not designated by the parent template`);
+    if(updated_template['related_templates']) {
+      for(let related_template of updated_template['related_templates']) {
+        updated_template_map[related_template.uuid] = related_template;
       }
-      let updated_template = updated_template_map[related_dataset.template_uuid];
-      this.recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate(related_dataset, updated_template);
+    }
+    if(dataset['related_datasets']) {
+      for(let related_dataset of dataset['related_datasets']) {
+        if(!(related_dataset.template_uuid in updated_template_map)) {
+          throw new Error(`recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate: dataset ${related_dataset.uuid} references
+          template ${related_dataset.template_id}, which is not designated by the parent template`);
+        }
+        let child_updated_template = updated_template_map[related_dataset.template_uuid];
+        this.recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate(related_dataset, child_updated_template);
+      }
     }
   }
 

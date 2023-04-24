@@ -42,8 +42,8 @@
       <ion-item lines="none" *ngIf="may_edit">
         <ion-button (click)="addRelatedDataset()">New Dataset</ion-button>
       </ion-item>
-      <div>
-        <ion-item  lines="none" *ngIf="may_edit">
+      <div *ngIf="may_edit">
+        <ion-item  lines="none">
           <ion-button [attr.id]="'link-existing-dataset-' + uuid?.value"
             (click)="loadDatasetsAvailableToLink()">
             Link Existing Dataset
