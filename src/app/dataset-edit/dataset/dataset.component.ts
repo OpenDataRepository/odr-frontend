@@ -121,7 +121,7 @@ export class DatasetComponent implements OnInit, OnChanges {
   linkExistingDataset(uuid: string) {
     this.datasetService.fetchLatestDatasetAndTemplate(uuid).pipe(
       switchMap((related_dataset_object: any) => {
-        if(this.datasetHasChild(this.uuid.value)) {
+        if(this.datasetHasChild(uuid)) {
           return from(this.presentAlert('Cannot link the chosen dataset as it is already linked'));
         }else if(DatasetComponent.hasCircularDependency(related_dataset_object, this.uuid.value)) {
           return from(this.presentAlert('Cannot link the chosen dataset as it would cause a circular dependency'));

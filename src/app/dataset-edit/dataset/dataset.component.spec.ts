@@ -1,6 +1,6 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { IonicModule, ModalController } from '@ionic/angular';
+import { AlertController, IonicModule, ModalController } from '@ionic/angular';
 import { DatasetService } from 'src/app/api/dataset.service';
 
 import { DatasetComponent } from './dataset.component';
@@ -14,7 +14,7 @@ describe('DatasetEditComponent', () => {
   let component: DatasetComponent;
   let fixture: ComponentFixture<DatasetComponent>;
   let modalController: ModalController;
-  let debugElement: DebugElement;
+  // let debugElement: DebugElement;
   let createSpy: jasmine.Spy;
 
   class ApiServiceMock {
@@ -29,16 +29,9 @@ describe('DatasetEditComponent', () => {
   class PermissionServiceMock {
   }
 
-  const datasetService = jasmine.createSpyObj('DatasetService', ['updateDatasetAndTemplate', 'fetchLatestDatasetAndTemplate']);
-  datasetService.updateDatasetAndTemplate.and.returnValue(of(null));
-  datasetService.fetchLatestDatasetAndTemplate.and.returnValue(of({
-    'dataset_uuid': 'dataset_uuid',
-    'template_uuid': 'template_uuid',
-    'template_id': 'template_id',
-    'name': 'name',
-    'fields': [],
-    'related_datasets': []
-  }));
+  let datasetService: any;
+
+  let alertControllerSpy: any;
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
@@ -48,6 +41,7 @@ describe('DatasetEditComponent', () => {
         { provide: DatasetService, useValue: datasetService },
         { provide: ApiService, useClass: ApiServiceMock },
         { provide: PermissionService, useClass: PermissionServiceMock },
+        { provide: AlertController, useValue: alertControllerSpy },
         ModalController
       ],
       imports: [
@@ -56,24 +50,39 @@ describe('DatasetEditComponent', () => {
       ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(DatasetComponent);
-    component = fixture.componentInstance;
-    debugElement = fixture.debugElement;
-
-    modalController = TestBed.inject(ModalController);
-    createSpy = spyOn(modalController, 'create').and.returnValue(Promise.resolve({
-      present: () => {},
-      dismiss: () => {},
-    } as unknown as HTMLIonModalElement));
   }));
 
   it('should create', () => {
+    fixture = TestBed.createComponent(DatasetComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     expect(component).toBeTruthy();
   });
 
   describe('saveDraft', () => {
-    it('if saveDraft has no changes from last persisted, pass silently', () => {
+    it('if saveDraft has no changes from last persisted, pass silently', (done: DoneFn) => {
+
+      datasetService = jasmine.createSpyObj('DatasetService', ['updateDatasetAndTemplate', 'fetchLatestDatasetAndTemplate']);
+      datasetService.updateDatasetAndTemplate.and.returnValue(of(null));
+      datasetService.fetchLatestDatasetAndTemplate.and.returnValue(of({
+        'dataset_uuid': 'dataset_uuid',
+        'template_uuid': 'template_uuid',
+        'template_id': 'template_id',
+        'name': 'name',
+        'fields': [],
+        'related_datasets': []
+      }));
+
+      TestBed.overrideProvider(DatasetService, { useValue: datasetService });
+      fixture = TestBed.createComponent(DatasetComponent);
+      component = fixture.componentInstance;
+
+      modalController = TestBed.inject(ModalController);
+      createSpy = spyOn(modalController, 'create').and.returnValue(Promise.resolve({
+        present: () => {},
+        dismiss: () => {},
+      } as unknown as HTMLIonModalElement));
+
       component.form = new FormGroup({
         name: new FormControl(),
         dataset_uuid: new FormControl(),
@@ -84,8 +93,51 @@ describe('DatasetEditComponent', () => {
       });
       fixture.detectChanges();
       expect(component).toBeTruthy();
-      component.saveDraft().subscribe();
+      component.saveDraft().subscribe(() => done());
     })
+  })
+
+  describe('linkExistingDataset', () => {
+    it('cannot link dataset that is already linked', async () => {
+      datasetService = jasmine.createSpyObj('DatasetService', ['fetchLatestDatasetAndTemplate']);
+      datasetService.fetchLatestDatasetAndTemplate.and.returnValue(of({
+        'dataset_uuid': 'already_linked'
+      }));
+      alertControllerSpy = jasmine.createSpyObj('AlertController', ['create']);
+      const alertMock = { present: jasmine.createSpy('present') };
+      alertControllerSpy.create.and.returnValue(Promise.resolve(alertMock as any));
+
+      TestBed.overrideProvider(DatasetService, { useValue: datasetService });
+      TestBed.overrideProvider(AlertController, { useValue: alertControllerSpy });
+      fixture = TestBed.createComponent(DatasetComponent);
+      component = fixture.componentInstance;
+
+      component.form = new FormGroup({
+        name: new FormControl(),
+        dataset_uuid: new FormControl(),
+        template_uuid: new FormControl(),
+        template_id: new FormControl(),
+        fields: new FormArray([]),
+        related_datasets: new FormArray([
+          new FormGroup({
+            name: new FormControl(),
+            dataset_uuid: new FormControl('already_linked'),
+            template_uuid: new FormControl(),
+            template_id: new FormControl(),
+            fields: new FormArray([]),
+            related_datasets: new FormArray([]),
+          })
+        ]),
+      });
+      fixture.detectChanges();
+      expect(component).toBeTruthy();
+      component.linkExistingDataset('already_linked');
+
+      fixture.detectChanges();
+
+      expect(alertControllerSpy.create).toHaveBeenCalled();
+
+    });
   })
 
   // describe('linkExistingDataset', () => {
