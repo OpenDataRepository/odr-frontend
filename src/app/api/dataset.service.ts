@@ -183,10 +183,12 @@ export class DatasetService {
       template.public_date = combined.public_date;
       dataset.public_date = combined.public_date;
     }
-    for(let child of combined.related_datasets) {
-      let separated_child = this.splitTemplateAndDataset(child);
-      template.related_templates.push(separated_child.template);
-      dataset.related_datasets.push(separated_child.dataset);
+    if(combined.related_datasets) {
+      for(let child of combined.related_datasets) {
+        let separated_child = this.splitTemplateAndDataset(child);
+        template.related_templates.push(separated_child.template);
+        dataset.related_datasets.push(separated_child.dataset);
+      }
     }
     return {template, dataset};
   }
@@ -194,6 +196,14 @@ export class DatasetService {
   private combineTemplateAndDataset(template: any, dataset: any) {
     if(template == null) {
       throw new Error(`Dataset ${dataset.uuid} references template ${dataset.template_id}, which does not exist`)
+    }
+    if(dataset.no_permissions) {
+      // Don't have view permissions.
+      return {
+        dataset_uuid: dataset.uuid,
+        template_uuid: template.uuid,
+        no_permissions: true
+      }
     }
     if(template._id != dataset.template_id) {
       throw new Error(`Dataset ${dataset.uuid} has wrong template_id. Is ${dataset.template_id}. Should be ${template._id}`);
@@ -207,9 +217,13 @@ export class DatasetService {
     let related_datasets: any = [];
     if(dataset.related_datasets) {
       for(let related_dataset of dataset.related_datasets) {
+        if(!(related_dataset.template_id in template_map)) {
+          console.error(`template_id ${related_dataset.template_id} does not exist on template ${JSON.stringify(template)}`);
+          console.log('removing reference to dataset ' + related_dataset.uuid + ' since it references that template_id');
+        }
         try {
           related_datasets.push(this.combineTemplateAndDataset(template_map[related_dataset.template_id], related_dataset));
-        } catch (err){ console.log(err); console.log('removing reference to dataset ' + related_dataset.uuid); }
+        } catch (err){ console.error(err); console.error('removing reference to dataset ' + related_dataset.uuid); }
       }
     }
     return {
@@ -228,6 +242,7 @@ export class DatasetService {
   }
 
   private recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset: { [key: string]: any }, updated_template: { [key: string]: any }) {
+
     if(dataset['template_id'] != updated_template['_id']) {
       dataset['template_id'] = updated_template['_id'];
     }
@@ -239,6 +254,11 @@ export class DatasetService {
     }
     if(dataset['related_datasets']) {
       for(let related_dataset of dataset['related_datasets']) {
+        if(related_dataset.no_permissions) {
+          // User doesn't have view permissions - shouldn't modify anything
+          continue;
+        }
+
         if(!(related_dataset.template_uuid in updated_template_map)) {
           throw new Error(`recursiveModifyDatasetTemplate_idsToMatchUpdatedTemplate: dataset ${related_dataset.uuid} references
           template ${related_dataset.template_id}, which is not designated by the parent template`);

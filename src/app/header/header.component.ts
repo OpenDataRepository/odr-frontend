@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../auth.service';
 
 @Component({
@@ -29,7 +29,12 @@ export class HeaderComponent implements OnInit{
 
   signOut() {
     this.auth.logout();
-    this.router.navigateByUrl('/');
+    if(this.router.url == "/home" || this.router.url == "/" ) {
+      window.location.reload();
+    }
+    else {
+      this.router.navigateByUrl('/');
+    }
   }
 
 }

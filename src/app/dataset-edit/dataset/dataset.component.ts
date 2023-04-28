@@ -147,9 +147,13 @@ export class DatasetComponent implements OnInit, OnChanges {
     if(dataset_object.dataset_uuid == uuid) {
       return true;
     }
-    for(let related_dataset_object of dataset_object.related_datasets) {
-      if(DatasetComponent.hasCircularDependency(related_dataset_object, uuid)) {
-        return true;
+    // If user doesn't have view permissions to the dataset and attaching it creates a circular dependency, the backend will through an error
+    // This is a bug but will only come up in rare circumstances.
+    if(dataset_object.related_datasets){
+      for(let related_dataset_object of dataset_object.related_datasets) {
+        if(DatasetComponent.hasCircularDependency(related_dataset_object, uuid)) {
+          return true;
+        }
       }
     }
     return false;
@@ -195,6 +199,16 @@ export class DatasetComponent implements OnInit, OnChanges {
   }
 
   private convertFormToDatasetObject(form: FormGroup): any {
+    if(form.contains('no_permissions')) {
+      // No view permissions
+      return {
+        dataset_uuid: form.get('dataset_uuid')?.value,
+        template_uuid: form.get('template_uuid')?.value,
+        template_id: form.get('template_id')?.value,
+        no_permissions: true
+      };
+    }
+
     let fields = [];
     for(let field_form of (form.get("fields") as FormArray).controls) {
       fields.push(this.convertFormToFieldObject(field_form as FormGroup));
@@ -215,6 +229,13 @@ export class DatasetComponent implements OnInit, OnChanges {
   }
 
   private convertFormToFieldObject(form: FormGroup) {
+    if(form.contains('no_permissions')) {
+      return {
+        uuid: form.get('uuid')?.value,
+        no_permissions: true
+      }
+    }
+
     let field: any = {
       name: form.get('name') ? form.get('name')?.value : "",
       description: form.get('description') ? form.get('description')?.value : "",
@@ -229,6 +250,15 @@ export class DatasetComponent implements OnInit, OnChanges {
   }
 
   public convertDatasetObjectToForm(dataset_object: any) {
+    if(dataset_object.no_permissions) {
+      // No view permissions
+      return this._fb.group({
+        dataset_uuid: dataset_object.dataset_uuid,
+        template_uuid: dataset_object.template_uuid,
+        template_id: dataset_object.template_id,
+        no_permissions: true
+      });
+    }
     let form: FormGroup = this._fb.group({
       dataset_uuid: dataset_object.dataset_uuid,
       template_uuid: dataset_object.template_uuid,
@@ -245,6 +275,13 @@ export class DatasetComponent implements OnInit, OnChanges {
     }
     if(dataset_object.fields) {
       for(let field of dataset_object.fields) {
+        if(field.no_permissions) {
+          (form.get("fields") as FormArray).push(this._fb.group({
+            uuid: new FormControl(field.uuid),
+            no_permissions: new FormControl(true)
+          }));
+          continue;
+        }
         let field_form: FormGroup = this._fb.group({
           uuid: new FormControl(field.uuid),
           name: new FormControl(field.name, [Validators.required]),
@@ -268,9 +305,23 @@ export class DatasetComponent implements OnInit, OnChanges {
   }
 
   private copyNewFormToComponentForm(new_form: FormGroup) {
+
     this.form.controls['dataset_uuid'].setValue(new_form.get('dataset_uuid')?.value);
     this.form.controls['template_uuid'].setValue(new_form.get('template_uuid')?.value);
     this.form.controls['template_id'].setValue(new_form.get('template_id')?.value);
+
+    if(new_form.contains('no_permissions')) {
+      // No view permissions
+      if(!this.form.contains('no_permissions')) {
+        this.form.addControl('no_permissions', new FormControl(true))
+      }
+      return;
+    } else {
+      try {
+        this.form.removeControl('no_permissions');
+      } catch (err) {}
+    }
+
     this.form.controls['name'].setValue(new_form.get('name')?.value);
 
     if(new_form.contains('public_date')) {

@@ -70,7 +70,7 @@
                 <ion-list *ngIf="user_datasets_loaded">
                   <ion-item *ngFor="let dataset of user_datasets_to_link"
                   [button]="true" [detail]="false" (click)="confirmLinkDatasetModal(dataset.uuid)"
-                  >{{ dataset.name }}</ion-item>
+                  >{{ dataset.name }}  ({{ dataset.uuid }})</ion-item>
                 </ion-list>
                 <ion-item>
                   <ion-label><b>Public Datasets</b></ion-label>
@@ -81,7 +81,7 @@
                 <ion-list *ngIf="public_datasets_loaded">
                   <ion-item *ngFor="let dataset of public_datasets_to_link"
                   [button]="true" [detail]="false" (click)="confirmLinkDatasetModal(dataset.uuid)"
-                  >{{ dataset.name }}</ion-item>
+                  >{{ dataset.name }} ({{ dataset.uuid }})</ion-item>
                 </ion-list>
               </div>
             </ion-content>

@@ -96,8 +96,8 @@ export class AuthService {
     if (this.activeLogoutTimer) {
       clearTimeout(this.activeLogoutTimer);
     }
-    this.userEmitter.next(null);
     Preferences.remove({ key: 'authData' });
+    this.userEmitter.next(null);
   }
 
   private autoLogout(duration: number) {

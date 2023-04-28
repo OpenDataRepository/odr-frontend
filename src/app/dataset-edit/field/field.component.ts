@@ -39,7 +39,7 @@ export class FieldComponent implements OnInit, OnChanges {
 
   get updated_at() { return this.form.get('updated_at'); }
 
-  get may_edit() { return !this.disabled && this.edit_permission; }
+  get may_edit() { return !this.uuid || (!this.disabled && this.edit_permission); }
 
   makePublic() {
     this.form.addControl('public_date', new FormControl((new Date()).toISOString()));
