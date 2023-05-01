@@ -19,7 +19,6 @@ import { ActivatedRoute } from '@angular/router';
     RecordViewPageRoutingModule,
     HeaderModule
   ],
-  declarations: [RecordViewPage, RecordComponent],
-  providers: [ActivatedRoute]
+  declarations: [RecordViewPage, RecordComponent]
 })
 export class RecordViewPageModule {}

@@ -7,8 +7,7 @@ import { DatasetRecordsPage } from './dataset-records.page';
 const routes: Routes = [
   {
     path: ':uuid',
-    component: DatasetRecordsPage,
-    canMatch: [AuthGuard]
+    component: DatasetRecordsPage
   }
 ];
 

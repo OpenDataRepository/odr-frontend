@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ToastController, ViewWillEnter } from '@ionic/angular';
 import { catchError, EMPTY, throwError } from 'rxjs';
 import { ApiService } from '../api/api.service';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-dataset-records',
@@ -15,7 +16,8 @@ export class DatasetRecordsPage implements OnInit, ViewWillEnter {
   records: any = [];
 
   constructor(private route: ActivatedRoute, private router: Router,
-    private api: ApiService, private toastController: ToastController) { }
+    private api: ApiService, private toastController: ToastController,
+    private auth: AuthService) { }
 
   ngOnInit() {
   }
@@ -27,7 +29,20 @@ export class DatasetRecordsPage implements OnInit, ViewWillEnter {
     }
     this.dataset_uuid = uuid as string;
 
-    this.api.datasetRecords(uuid as string).subscribe(records => {this.records = records;})
+    this.api.datasetRecords(uuid as string).subscribe({
+      next: (records: any) => { this.records = records; },
+      error: (err: any) => {
+        if(err.status == 404) {
+          this.router.navigateByUrl('/404', {skipLocationChange: true})
+          return;
+        }
+        if(err.status == 401) {
+          this.auth.send401OrRedirectToLogin();
+          return;
+        }
+        console.error('HTTP Error', err)
+      }
+    })
   }
 
   deleteDraft(index: number) {

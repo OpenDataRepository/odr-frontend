@@ -42,7 +42,7 @@ describe('RecordEditComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('Draft is deleted -> persisted goes to form', () => {
+  it('Draft is deleted -> persisted goes to form', (done: DoneFn) => {
     component.form = new FormGroup({
       uuid: new FormControl(),
       dataset_uuid: new FormControl(),
@@ -54,7 +54,7 @@ describe('RecordEditComponent', () => {
       })
     });
     fixture.detectChanges();
-    component.saveDraft().subscribe();
+    component.saveDraft().subscribe(() => {done();});
 
   });
 });

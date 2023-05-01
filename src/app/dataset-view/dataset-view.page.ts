@@ -75,7 +75,9 @@ export class DatasetViewPage implements OnInit, ViewWillEnter {
     this.datasetService.persistDatasetAndTemplate(this.dataset).pipe(
       switchMap(() => {return this.datasetService.fetchLatestDatasetAndTemplate(this.uuid)}),
       switchMap((new_dataset) => {this.dataset = new_dataset; return of({});})
-    ).subscribe();
+    ).subscribe(() => {
+      this.has_persisted_version = true;
+    });
   }
 
   get persisted(): boolean {

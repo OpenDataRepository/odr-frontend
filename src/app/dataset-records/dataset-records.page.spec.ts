@@ -29,6 +29,9 @@ describe('DatasetRecordsPage', () => {
     }
   }
 
+  class AuthServiceMock {
+  }
+
   @Component({
     selector: 'app-header',
     template: '<p>Mock App header</p>'
@@ -44,6 +47,7 @@ describe('DatasetRecordsPage', () => {
       providers: [
         { provide: ActivatedRoute, useClass: ActivatedRouteMock },
         { provide: ApiService, useClass: ApiServiceMock },
+        { provide: AuthService, useClass: AuthServiceMock },
       ],
       imports: [
         IonicModule.forRoot(),
