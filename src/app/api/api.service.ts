@@ -272,6 +272,59 @@ export class ApiService {
 
 
 
+  fetchTemplateFieldDraft(uuid: string) {
+    return this.reqHeader()
+    .pipe(
+      switchMap((headers: any) => {
+        return this.http
+        .get(
+          environment.backend_url +  '/template_field/' + uuid + '/draft',
+          { headers }
+        );
+      })
+    )
+  }
+
+  fetchTemplateFieldLatestPersisted(uuid: string) {
+    return this.reqHeader()
+    .pipe(
+      switchMap((headers: any) => {
+        return this.http
+        .get(
+          environment.backend_url +  '/template_field/' + uuid + '/latest_persisted',
+          { headers }
+        );
+      })
+    )
+  }
+
+  userTemplateFields() {
+    return this.reqHeader()
+    .pipe(
+      switchMap((headers: any) => {
+        return this.http
+        .get(
+          environment.backend_url +  '/account/template_fields',
+          { headers }
+        );
+      })
+    )
+  }
+
+  publicTemplateFields() {
+    var reqHeader = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+    return this.http
+    .get(
+      environment.backend_url +  '/template_field/all_public_fields',
+      { headers: reqHeader }
+    );
+  }
+
+
+
+
   datasetRecords(dataset_uuid: string) {
     return this.reqHeader()
     .pipe(

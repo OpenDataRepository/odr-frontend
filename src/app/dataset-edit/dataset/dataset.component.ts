@@ -5,6 +5,7 @@ import { DatasetService } from '../../api/dataset.service';
 import { PermissionService } from '../../api/permission.service';
 import { ApiService } from 'src/app/api/api.service';
 import { AlertController, IonModal } from '@ionic/angular';
+import { FieldService } from 'src/app/api/field.service';
 
 @Component({
   selector: 'dataset-edit',
@@ -26,17 +27,26 @@ export class DatasetComponent implements OnInit, OnChanges {
   @Output()
   remove: EventEmitter<void> = new EventEmitter<void>();
 
-  @ViewChild(IonModal) link_dataset_modal!: IonModal;
+  @ViewChild('link_dataset_modal') link_dataset_modal!: IonModal;
+
+  // TODO: this and link_dataset_modal need to each have an id now
+  @ViewChild('link_field_modal') link_field_modal!: IonModal;
 
   user_datasets_loaded = false;
   public_datasets_loaded = false;
   user_datasets_to_link: any = [];
   public_datasets_to_link: any = [];
+
+  user_fields_loaded = false;
+  public_fields_loaded = false;
+  user_fields_to_link: any = [];
+  public_fields_to_link: any = [];
+
   edit_permission = false;
-  // permission_checked = false;
 
   constructor(private _fb: FormBuilder, private datasetService: DatasetService, private api: ApiService,
-    private alertController: AlertController, private permissionService: PermissionService) {}
+    private alertController: AlertController, private permissionService: PermissionService,
+    private fieldService: FieldService) {}
 
   ngOnInit() {
   }
@@ -44,7 +54,6 @@ export class DatasetComponent implements OnInit, OnChanges {
   ngOnChanges() {
     if(!this.disabled && this.uuid) {
       this.permissionService.hasPermission(this.uuid.value, 'edit').subscribe(result => {this.edit_permission = result as boolean;});
-      // this.permission_checked = true;
     }
   }
 
@@ -65,6 +74,54 @@ export class DatasetComponent implements OnInit, OnChanges {
       name: new FormControl(null, [Validators.required]),
       description: new FormControl(null)
     }));
+  }
+
+  loadFieldsAvailableToLink(){
+    this.user_fields_loaded = false;
+    this.user_fields_to_link = [];
+    this.api.userTemplateFields().subscribe((fields: any) => {
+      this.user_fields_to_link = fields;
+      this.user_fields_loaded = true;
+    });
+
+    this.public_fields_loaded = false;
+    this.public_fields_to_link = [];
+    this.api.publicTemplateFields().subscribe((fields: any) => {
+      this.public_fields_to_link = fields;
+      this.public_fields_loaded = true;
+    });
+  }
+
+  cancelLinkFieldModal() {
+    this.link_field_modal.dismiss(null, 'cancel');
+  }
+  confirmLinkFieldModal(uuid: string) {
+    this.linkExistingField(uuid);
+    this.link_field_modal.dismiss(null, 'confirm');
+  }
+
+  linkExistingField(uuid: string) {
+    this.fieldService.fetchLatestField(uuid).pipe(
+      switchMap((related_field: any) => {
+        // TODO: can a field be linked multiple times?
+        if(this.datasetHasField(uuid)) {
+          return from(this.presentAlert('Cannot link the chosen field as it is already linked'));
+        } else {
+          this.fields_form_array.push(this.convertFieldObjectToForm(related_field));
+          return this.saveDraft();
+        }
+      })
+    ).subscribe();
+  }
+
+  private datasetHasField(uuid: string) {
+    let dataset_object = this.convertFormToDatasetObject(this.form);
+    for(let field of dataset_object.fields) {
+      if(field.uuid == uuid) {
+        return true;
+      }
+    }
+    return false;
   }
 
   deleteRelatedDataset(index: number) {
@@ -167,6 +224,10 @@ export class DatasetComponent implements OnInit, OnChanges {
     return this.form.get("related_datasets") as FormArray;
   }
 
+  get related_fields_form_array(): FormArray {
+    return this.form.get("related_fields") as FormArray;
+  }
+
   get name() { return this.form.get('name'); }
 
   get uuid() { return this.form.get('dataset_uuid'); }
@@ -249,6 +310,27 @@ export class DatasetComponent implements OnInit, OnChanges {
     return field;
   }
 
+  private convertFieldObjectToForm(field: any) {
+    if(field.no_permissions) {
+      return this._fb.group({
+        uuid: new FormControl(field.uuid),
+        no_permissions: new FormControl(true)
+      });
+    }
+    let field_form: FormGroup = this._fb.group({
+      uuid: new FormControl(field.uuid),
+      name: new FormControl(field.name, [Validators.required]),
+      description: new FormControl(field.description),
+    });
+    if(field.public_date) {
+      field_form.addControl('public_date', new FormControl(field.public_date));
+    }
+    if(field.updated_at) {
+      field_form.addControl('updated_at', new FormControl(field.updated_at));
+    }
+    return field_form;
+  }
+
   public convertDatasetObjectToForm(dataset_object: any) {
     if(dataset_object.no_permissions) {
       // No view permissions
@@ -275,24 +357,7 @@ export class DatasetComponent implements OnInit, OnChanges {
     }
     if(dataset_object.fields) {
       for(let field of dataset_object.fields) {
-        if(field.no_permissions) {
-          (form.get("fields") as FormArray).push(this._fb.group({
-            uuid: new FormControl(field.uuid),
-            no_permissions: new FormControl(true)
-          }));
-          continue;
-        }
-        let field_form: FormGroup = this._fb.group({
-          uuid: new FormControl(field.uuid),
-          name: new FormControl(field.name, [Validators.required]),
-          description: new FormControl(field.description),
-        });
-        if(field.public_date) {
-          field_form.addControl('public_date', new FormControl(field.public_date));
-        }
-        if(field.updated_at) {
-          field_form.addControl('updated_at', new FormControl(field.updated_at));
-        }
+        let field_form = this.convertFieldObjectToForm(field);
         (form.get("fields") as FormArray).push(field_form);
       }
     }
