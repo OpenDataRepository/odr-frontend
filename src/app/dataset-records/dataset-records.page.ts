@@ -4,6 +4,7 @@ import { ToastController, ViewWillEnter } from '@ionic/angular';
 import { catchError, EMPTY, throwError } from 'rxjs';
 import { ApiService } from '../api/api.service';
 import { AuthService } from '../auth.service';
+import { PermissionService } from '../api/permission.service';
 
 @Component({
   selector: 'app-dataset-records',
@@ -14,10 +15,11 @@ export class DatasetRecordsPage implements OnInit, ViewWillEnter {
 
   dataset_uuid: string = "";
   records: any = [];
+  has_edit_permission = false;
 
   constructor(private route: ActivatedRoute, private router: Router,
     private api: ApiService, private toastController: ToastController,
-    private auth: AuthService) { }
+    private auth: AuthService, private permissionService: PermissionService) { }
 
   ngOnInit() {
   }
@@ -41,6 +43,12 @@ export class DatasetRecordsPage implements OnInit, ViewWillEnter {
           return;
         }
         console.error('HTTP Error', err)
+      }
+    })
+
+    this.permissionService.hasPermission(uuid as string, ApiService.PermissionType.Edit).subscribe(result => {
+      if(result) {
+        this.has_edit_permission = true;
       }
     })
   }

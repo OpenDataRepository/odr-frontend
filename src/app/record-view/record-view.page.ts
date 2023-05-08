@@ -4,6 +4,8 @@ import { switchMap, of, last } from 'rxjs';
 import { ApiService } from '../api/api.service';
 import { DatasetService } from '../api/dataset.service';
 import { RecordService } from '../api/record.service';
+import { AuthService } from '../auth.service';
+import { PermissionService } from '../api/permission.service';
 
 @Component({
   selector: 'app-record-view',
@@ -15,9 +17,11 @@ export class RecordViewPage implements OnInit {
   uuid: string = "";
   record: any = {};
   has_persisted_version = false;
+  has_edit_permission = false;
 
   constructor(private route: ActivatedRoute, private router: Router,
-    private recordService: RecordService, private api: ApiService) { }
+    private recordService: RecordService, private api: ApiService,
+    private permissionService: PermissionService, private auth: AuthService) { }
 
   ngOnInit(): void {
   }
@@ -30,12 +34,23 @@ export class RecordViewPage implements OnInit {
     this.uuid = uuid as string;
 
     this.recordService.fetchLatestRecord(this.uuid).subscribe({
-      next: (record: any) => { this.record = record; },
+      next: (record: any) => {
+        this.record = record;
+        this.permissionService.hasPermission(record.dataset_uuid, ApiService.PermissionType.Edit).subscribe(result => {
+          if(result) {
+            this.has_edit_permission = true;
+          }
+        })
+      },
       error: (err: any) => {
         if(err.status == 404) {
           this.router.navigateByUrl('/404', {skipLocationChange: true})
-          return;
+        } else if(err.status == 401) {
+          this.auth.send401OrRedirectToLogin();
+        } else {
+          console.error('HTTP Error', err);
         }
+        return;
       }
     });
 
@@ -43,6 +58,7 @@ export class RecordViewPage implements OnInit {
       next: () => { this.has_persisted_version = true; },
       error: () => { this.has_persisted_version = false; }
     })
+
   }
 
   persist() {

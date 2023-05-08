@@ -12,7 +12,7 @@ export class RecordService {
   fetchLatestRecord(uuid: string) {
     return this.api.fetchRecordDraft(uuid).pipe(
       catchError(err => {
-        if(err.status == 404) {
+        if(err.status == 404 || err.status == 401) {
           return this.api.fetchRecordLatestPersisted(uuid);
         } else {
           return throwError(() => err);

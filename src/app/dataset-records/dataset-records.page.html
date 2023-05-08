@@ -4,11 +4,14 @@
   <ion-item lines="none">
     <ion-button [routerLink]="['/dataset-view', dataset_uuid]">Go to Dataset Format</ion-button>
   </ion-item>
-  <ion-item lines="none">
+  <ion-item lines="none" *ngIf="has_edit_permission">
     <ion-button [routerLink]="['/record-edit', 'new', dataset_uuid]">New Record</ion-button>
   </ion-item>
   <ion-item lines="none">
     <ion-label><b>Records</b></ion-label>
+  </ion-item>
+  <ion-item *ngIf="records.length === 0" lines="none">
+    <ion-text color="medium">No records yet...</ion-text>
   </ion-item>
   <ion-grid class="ion-no-padding" class="ion-padding-end">
     <ion-row *ngFor="let record of records; let i = index">
@@ -23,7 +26,7 @@
       <ion-col size="2">
         <ion-button expand="block" [routerLink]="['/record-view', record.uuid]">View</ion-button>
       </ion-col>
-      <ion-col size="2">
+      <ion-col size="2" *ngIf="has_edit_permission">
         <ion-button expand="block" color="danger" (click)="deleteDraft(i)" [disabled]="record.persist_date">Delete Draft</ion-button>
       </ion-col>
     </ion-row>

@@ -7,8 +7,7 @@ import { RecordViewPage } from './record-view.page';
 const routes: Routes = [
   {
     path: ':uuid',
-    component: RecordViewPage,
-    canMatch: [AuthGuard]
+    component: RecordViewPage
   }
 ];
 

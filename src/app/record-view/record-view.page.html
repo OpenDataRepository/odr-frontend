@@ -7,11 +7,11 @@
   <ion-toolbar>
     <ion-grid>
       <ion-row class="ion-text-center">
-        <ion-col>
+        <ion-col *ngIf="has_edit_permission">
           <ion-button expand="block" [routerLink]="['/record-edit',uuid]">Edit</ion-button>
         </ion-col>
-        <ion-col *ngIf="record && !record.persist_date">
-          <ion-button expand="block" (click)="persist()">Save as Version</ion-button>
+        <ion-col *ngIf="has_edit_permission">
+          <ion-button expand="block" (click)="persist()" [disabled]="record && record.persist_date">Save as Version</ion-button>
         </ion-col>
       </ion-row>
     </ion-grid>

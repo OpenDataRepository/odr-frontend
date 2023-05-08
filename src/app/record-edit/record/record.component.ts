@@ -67,6 +67,7 @@ export class RecordComponent implements OnInit {
     this.records_available = false;
     this.records_to_link = [];
 
+    // TODO: this is wrong. It should be the records of the related_datasets that we link, not the records of this dataset
     let observables = this.related_datasets.map((d: any) => this.api.datasetRecords(d.uuid).pipe(take(1)))
     forkJoin(observables).subscribe((results: any) => {
       // TODO: consider removing related_records already on the record
@@ -201,21 +202,27 @@ export class RecordComponent implements OnInit {
       related_records: this._fb.array([]),
       dataset
     })
-    for(let field of record_object.fields) {
-      (form.get("fields") as FormArray).push(this._fb.group({
-        uuid: new FormControl(field.uuid),
-        name: new FormControl(field.name, [Validators.required]),
-        description: new FormControl(field.description),
-        value: new FormControl(field.value ? field.value : "")
-      }));
+    if(record_object.fields) {
+      for(let field of record_object.fields) {
+        (form.get("fields") as FormArray).push(this._fb.group({
+          uuid: new FormControl(field.uuid),
+          name: new FormControl(field.name, [Validators.required]),
+          description: new FormControl(field.description),
+          value: new FormControl(field.value ? field.value : "")
+        }));
+      }
     }
     let dataset_map: any = {};
-    for(let related_dataset of dataset.related_datasets) {
-      dataset_map[related_dataset.uuid] = related_dataset;
+    if(dataset.related_datasets) {
+      for(let related_dataset of dataset.related_datasets) {
+        dataset_map[related_dataset.uuid] = related_dataset;
+      }
     }
-    for(let related_record of record_object.related_records) {
-      (form.get("related_records") as FormArray)
-        .push(this.convertRecordObjectToForm(related_record, dataset_map[related_record.dataset_uuid]));
+    if(record_object.related_records) {
+      for(let related_record of record_object.related_records) {
+        (form.get("related_records") as FormArray)
+          .push(this.convertRecordObjectToForm(related_record, dataset_map[related_record.dataset_uuid]));
+      }
     }
     return form;
   }

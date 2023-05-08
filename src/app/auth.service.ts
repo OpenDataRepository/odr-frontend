@@ -176,6 +176,6 @@ export class AuthService {
           this.router.navigateByUrl('/401', {skipLocationChange: true});
         }
       })
-    );
+    ).subscribe();
   }
 }
