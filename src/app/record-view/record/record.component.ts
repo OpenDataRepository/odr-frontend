@@ -14,6 +14,10 @@ export class RecordComponent implements OnInit {
     return !!this.record?.persist_date;
   }
 
+  get private(): boolean {
+    return this.record?.public_date;
+  }
+
   get hasViewPermission(): boolean {
     return !this.record?.no_permissions;
   }

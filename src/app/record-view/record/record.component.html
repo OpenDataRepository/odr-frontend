@@ -1,6 +1,7 @@
 <div class="ion-margin border">
   <ion-item lines="inset">
     <ion-label>record uuid: {{ record.uuid }}</ion-label>
+    <ion-button *ngIf="private" slot="end" color="danger" disabled="true">Private</ion-button>
   </ion-item>
   <ion-item lines="inset">
     <ion-label>dataset uuid: <a [routerLink]="['/dataset-records',record.dataset_uuid]">{{ record.dataset_uuid }}</a></ion-label>

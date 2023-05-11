@@ -44,6 +44,16 @@ export class RecordComponent implements OnInit, OnChanges {
     }
   }
 
+  makePrivate() {
+    const futureDate = new Date();
+    futureDate.setFullYear(futureDate.getFullYear() + 1000);
+    this.form.addControl('public_date', new FormControl(futureDate.toISOString()));
+  }
+
+  undoPrivate() {
+    this.form.removeControl('public_date');
+  }
+
   deleteRelatedRecord(index: number) {
     this.related_records_form_array.removeAt(index);
   }
@@ -150,8 +160,12 @@ export class RecordComponent implements OnInit, OnChanges {
 
   get may_edit() { return !this.disabled && this.edit_permission; }
 
+  get record_private() {
+    return this.form.get('public_date')
+  }
+
   get public(): boolean {
-    return !!this.form.get('dataset')?.value.public_date;
+    return !!this.form.get('dataset')?.value.public_date && !this.record_private;
   }
 
   get hasViewPermission(): boolean {
@@ -199,20 +213,22 @@ export class RecordComponent implements OnInit, OnChanges {
         dataset_uuid: form.get('dataset_uuid')?.value,
       };
     }
-    let fields = [];
-    for(let field_form of (form.get("fields") as FormArray).controls) {
-      fields.push(this.convertFormToFieldObject(field_form as FormGroup));
-    }
-    let related_records = [];
-    for(let related_record_form of (form.get("related_records") as FormArray).controls) {
-      related_records.push(this.convertFormToRecordObject(related_record_form as FormGroup));
-    }
-    return {
+    let record_object: any = {
       uuid: form.get('uuid')?.value,
       dataset_uuid: form.get('dataset_uuid')?.value,
-      fields,
-      related_records
+      fields: [],
+      related_records: []
     };
+    if(form.contains('public_date')) {
+      record_object.public_date = form.get('public_date')?.value;
+    }
+    for(let field_form of (form.get("fields") as FormArray).controls) {
+      record_object.fields.push(this.convertFormToFieldObject(field_form as FormGroup));
+    }
+    for(let related_record_form of (form.get("related_records") as FormArray).controls) {
+      record_object.related_records.push(this.convertFormToRecordObject(related_record_form as FormGroup));
+    }
+    return record_object;
   }
 
   private convertFormToFieldObject(form: FormGroup) {
@@ -234,13 +250,16 @@ export class RecordComponent implements OnInit, OnChanges {
         no_permissions: true
       });
     }
-    let form = this._fb.group({
+    let form: any = this._fb.group({
       uuid: record_object.uuid,
       dataset_uuid: record_object.dataset_uuid,
       fields: this._fb.array([]),
       related_records: this._fb.array([]),
       dataset
     })
+    if(record_object.public_date) {
+      form.addControl('public_date', new FormControl(record_object.public_date));
+    }
     if(record_object.fields) {
       for(let field of record_object.fields) {
         (form.get("fields") as FormArray).push(this._fb.group({
@@ -269,6 +288,18 @@ export class RecordComponent implements OnInit, OnChanges {
   private copyNewFormToComponentForm(new_form: FormGroup) {
     this.form.controls['uuid'].setValue(new_form.get('uuid')?.value);
     this.form.controls['dataset_uuid'].setValue(new_form.get('dataset_uuid')?.value);
+
+    if(new_form.contains('public_date')) {
+      if(this.form.contains('public_date')) {
+        this.form.controls['public_date'].setValue(new_form.get('public_date')?.value);
+      } else {
+        this.form.addControl('public_date', new FormControl(new_form.get('public_date')?.value))
+      }
+    } else {
+      try {
+        this.form.removeControl('public_date');
+      } catch (err) {}
+    }
 
     this.form.removeControl('fields');
     this.form.addControl('fields', new_form.get('fields'));

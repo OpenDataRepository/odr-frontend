@@ -2,6 +2,8 @@
 
   <ion-item lines="inset">
     <ion-label>record uuid: {{ uuid?.value }}</ion-label>
+    <ion-button *ngIf="record_private" slot="end" color="danger" (click)="undoPrivate()" [disabled]="!may_edit">Private</ion-button>
+    <ion-button *ngIf="!record_private && may_edit" slot="end" color="light" (click)="makePrivate()">Not Private</ion-button>
   </ion-item>
   <ion-item lines="inset">
     <ion-label>dataset: {{ dataset_uuid }} ({{dataset_name}})</ion-label>
