@@ -9,6 +9,7 @@ import { RecordEditPageRoutingModule } from './record-edit-routing.module';
 import { RecordEditPage } from './record-edit.page';
 import { RecordComponent } from './record/record.component';
 import { HeaderModule } from '../header/header.module';
+import { FieldComponent } from './field/field.component';
 
 @NgModule({
   imports: [
@@ -19,6 +20,6 @@ import { HeaderModule } from '../header/header.module';
     ReactiveFormsModule,
     HeaderModule
   ],
-  declarations: [RecordEditPage, RecordComponent]
+  declarations: [RecordEditPage, RecordComponent, FieldComponent]
 })
 export class RecordEditPageModule {}

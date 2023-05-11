@@ -64,16 +64,24 @@ export class RecordViewPage implements OnInit {
   persist() {
     this.api.persistRecordDraft(this.record.uuid, this.recordUpdatedAt(this.record)).pipe(
       switchMap(() => {return this.recordService.fetchLatestRecord(this.uuid)}),
-      switchMap((new_record) => {this.record = new_record; return of({});})
+      switchMap((new_record) => {
+        this.record = new_record;
+        if(!('persist_date' in new_record)) {
+          console.error('error: just persisted record, but fetching the latest record returned a draft: ' + JSON.stringify(new_record, null, 2));
+        }
+        return of({});
+      })
     ).subscribe();
   }
 
   private recordUpdatedAt(record: any) {
     let updated_at = record.updated_at;
-    for(let related_record of record.related_records) {
-      let related_updated_at = this.recordUpdatedAt(related_record);
-      if(this.compareTime(related_updated_at, updated_at)) {
-        updated_at = related_updated_at;
+    if(record.related_records) {
+      for(let related_record of record.related_records) {
+        let related_updated_at = this.recordUpdatedAt(related_record);
+        if(this.compareTime(related_updated_at, updated_at)) {
+          updated_at = related_updated_at;
+        }
       }
     }
     return updated_at;

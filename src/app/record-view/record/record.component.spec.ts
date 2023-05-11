@@ -3,6 +3,8 @@ import { IonicModule } from '@ionic/angular';
 
 import { RecordComponent } from './record.component';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { of } from 'rxjs';
+import { PermissionService } from 'src/app/api/permission.service';
 
 describe('RecordViewComponent', () => {
   let component: RecordComponent;
@@ -18,11 +20,18 @@ describe('RecordViewComponent', () => {
     }
   }
 
+  class PermissionServiceMock {
+    hasPermission = (uuid: string, permission: string ) => {
+      return of(true);
+    }
+  }
+
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ RecordComponent ],
       providers: [
         { provide: ActivatedRoute, useClass: ActivatedRouteMock },
+        { provide: PermissionService, useClass: PermissionServiceMock }
       ],
       imports: [
         IonicModule.forRoot(),

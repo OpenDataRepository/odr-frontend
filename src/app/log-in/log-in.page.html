@@ -33,17 +33,8 @@
                 ngModel
                 name="password"
                 required
-                minlength="6"
                 #passwordCtrl="ngModel"
               ></ion-input>
-            </ion-item>
-            <ion-item
-              *ngIf="!passwordCtrl.valid && passwordCtrl.touched"
-              lines="none"
-            >
-              <ion-label color="danger">
-                Should at least be 6 characters long.
-              </ion-label>
             </ion-item>
 
           </ion-list>

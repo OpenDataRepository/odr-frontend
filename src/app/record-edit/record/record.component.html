@@ -1,85 +1,83 @@
-<form class="ion-margin" [ngClass]="{'border': form.valid, 'invalid-border': !form.valid}" [formGroup]="form">
+<form class="ion-margin" [ngClass]="{'gray-border': !may_edit, 'border': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}" [formGroup]="form">
 
   <ion-item lines="inset">
-    <ion-label>uuid: {{ uuid?.value }}</ion-label>
+    <ion-label>record uuid: {{ uuid?.value }}</ion-label>
+  </ion-item>
+  <ion-item lines="inset">
+    <ion-label>dataset: {{ dataset_uuid }} ({{dataset_name}})</ion-label>
   </ion-item>
 
-  <ion-item lines="none">Fields:</ion-item>
-  <div class="ion-margin" formArrayName="fields">
-    <div *ngFor="let f of fields_form_array?.controls; index as j">
-      <form class="ion-margin" [ngClass]="{'border': f.valid, 'invalid-border': !f.valid}" [formGroup]="castControlToGroup(f)">
-        <ion-item lines="inset">
-          <ion-label>Name: {{ f.get('name')?.value }}</ion-label>
-        </ion-item>
-        <ion-item lines="inset">
-          <ion-label>Description: {{ f.get('description')?.value }}</ion-label>
-        </ion-item>
-        <ion-item lines="inset">
-          <ion-label>Value:</ion-label>
-          <ion-input formControlName="value" placeholder="Enter value here..."></ion-input>
-        </ion-item>
-      </form>
-    </div>
-  </div>
-
-  <div *ngIf="related_datasets && related_datasets.length > 0">
-    <ion-item lines="none">Related Records:</ion-item>
-    <div class="ion-margin" formArrayName="related_records">
-      <div *ngFor="let f of related_records_form_array?.controls; index as i">
-        <record-edit
+  <div *ngIf="public || hasViewPermission">
+    <ion-item lines="none">Fields:</ion-item>
+    <div class="ion-margin" formArrayName="fields">
+      <div *ngFor="let f of fields_form_array?.controls">
+        <record-field-edit
             [form]="f"
-            (remove)="deleteRelatedRecord(i)">
-        </record-edit>
+            [disabled]="!may_edit">
+        </record-field-edit>
       </div>
-      <div>
-        <ion-item  lines="none">
-          <ion-button id="add-related-record">Add Related Record</ion-button>
-        </ion-item>
-        <ion-popover trigger="add-related-record" [dismissOnSelect]="true">
-          <ng-template>
-            <ion-content>
-              <ion-list>
-                <ion-item *ngFor="let related_dataset of related_datasets" lines="none"
-                [button]="true" [detail]="false" (click)="addRelatedRecord(related_dataset.uuid)"
-                >{{ related_dataset.name }}</ion-item>
-              </ion-list>
-            </ion-content>
-          </ng-template>
-        </ion-popover>
-      </div>
-      <div>
-        <ion-item lines="none">
-          <ion-button [attr.id]="'link-existing-record-' + uuid?.value" (click)="loadRecordsAvailableToLink()">Link Existing Record</ion-button>
-        </ion-item>
-        <ion-modal [attr.trigger]="'link-existing-record-' + uuid?.value">
-          <ng-template>
-            <ion-header>
-              <ion-toolbar>
-                <ion-buttons slot="start">
-                  <ion-button (click)="cancelLinkRecordModal()">Cancel</ion-button>
-                </ion-buttons>
-                <ion-title>Select a record to link</ion-title>
-              </ion-toolbar>
-            </ion-header>
-            <ion-content class="ion-padding">
-              <ion-item *ngIf="!records_available">
-                <ion-spinner></ion-spinner>
-              </ion-item>
-              <div *ngIf="records_available">
+    </div>
+
+    <div *ngIf="related_datasets && related_datasets.length > 0">
+      <ion-item lines="none">Related Records:</ion-item>
+      <div class="ion-margin" formArrayName="related_records">
+        <div *ngFor="let f of related_records_form_array?.controls; index as i">
+          <record-edit
+              [form]="f"
+              (remove)="deleteRelatedRecord(i)"
+              [disabled]="!may_edit">
+          </record-edit>
+        </div>
+        <div>
+          <ion-item  lines="none">
+            <ion-button id="add-related-record">Add Related Record</ion-button>
+          </ion-item>
+          <ion-popover trigger="add-related-record" [dismissOnSelect]="true">
+            <ng-template>
+              <ion-content>
                 <ion-list>
-                  <ion-item *ngFor="let record of records_to_link" lines="none"
-                  [button]="true" [detail]="false" (click)="confirmLinkRecordModal(record.uuid)"
-                  >{{ record.uuid }}</ion-item>
+                  <ion-item *ngFor="let related_dataset of related_datasets" lines="none"
+                  [button]="true" [detail]="false" (click)="addRelatedRecord(related_dataset.uuid)"
+                  >{{ related_dataset.name }}</ion-item>
                 </ion-list>
-              </div>
-            </ion-content>
-          </ng-template>
-        </ion-modal>
+              </ion-content>
+            </ng-template>
+          </ion-popover>
+        </div>
+        <div>
+          <ion-item lines="none">
+            <ion-button [attr.id]="'link-existing-record-' + uuid?.value" (click)="loadRecordsAvailableToLink()">Link Existing Record</ion-button>
+          </ion-item>
+          <ion-modal [attr.trigger]="'link-existing-record-' + uuid?.value">
+            <ng-template>
+              <ion-header>
+                <ion-toolbar>
+                  <ion-buttons slot="start">
+                    <ion-button (click)="cancelLinkRecordModal()">Cancel</ion-button>
+                  </ion-buttons>
+                  <ion-title>Select a record to link</ion-title>
+                </ion-toolbar>
+              </ion-header>
+              <ion-content class="ion-padding">
+                <ion-item *ngIf="!records_available">
+                  <ion-spinner></ion-spinner>
+                </ion-item>
+                <div *ngIf="records_available">
+                  <ion-list>
+                    <ion-item *ngFor="let record of records_to_link" lines="none"
+                    [button]="true" [detail]="false" (click)="confirmLinkRecordModal(record.uuid)"
+                    >{{ record.uuid }}</ion-item>
+                  </ion-list>
+                </div>
+              </ion-content>
+            </ng-template>
+          </ion-modal>
+        </div>
       </div>
     </div>
   </div>
 
-  <ion-item *ngIf="!is_top_level_record">
+  <ion-item *ngIf="!is_top_level_record && !disabled">
     <ion-button (click)="remove.emit()" color="danger">Remove Record</ion-button>
   </ion-item>
 

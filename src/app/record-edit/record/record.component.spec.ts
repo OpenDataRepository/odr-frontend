@@ -6,10 +6,17 @@ import { ApiService } from 'src/app/api/api.service';
 import { RecordComponent } from './record.component';
 import { of } from 'rxjs';
 import { RouterModule } from '@angular/router';
+import { PermissionService } from 'src/app/api/permission.service';
 
 describe('RecordEditComponent', () => {
   let component: RecordComponent;
   let fixture: ComponentFixture<RecordComponent>;
+
+  class PermissionServiceMock {
+    hasPermission = (uuid: string, permission: string ) => {
+      return of(true);
+    }
+  }
 
   const apiService = jasmine.createSpyObj('ApiService', ['updateRecord', 'fetchRecordLatestPersisted']);
   apiService.updateRecord.and.returnValue(of({'record': null}));
@@ -25,6 +32,7 @@ describe('RecordEditComponent', () => {
       providers: [
         FormBuilder,
         { provide: ApiService, useValue: apiService },
+        { provide: PermissionService, useClass: PermissionServiceMock }
       ],
       imports: [
         IonicModule.forRoot(),

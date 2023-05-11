@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { AlertController } from '@ionic/angular';
 
 @Component({
   selector: 'app-log-in',
@@ -10,7 +11,8 @@ import { AuthService } from '../auth.service';
 })
 export class LogInPage implements OnInit {
 
-  constructor(private authService: AuthService, private router: Router) { }
+  constructor(private authService: AuthService, private router: Router,
+    private alertController: AlertController) { }
 
   ngOnInit() {
   }
@@ -23,9 +25,25 @@ export class LogInPage implements OnInit {
     const password = form.value.password;
 
     let obs = this.authService.login(email, password);
-    obs.subscribe(resData => {
-      this.router.navigateByUrl('/');
+    obs.subscribe({
+      next: () => {
+        this.router.navigateByUrl('/');
+      },
+      error: (err: any) => {
+        this.presentAlert(err.error);
+      }
     })
+  }
+
+  private async presentAlert(message: string) {
+    const alert = await this.alertController.create({
+      header: 'Alert',
+      subHeader: '',
+      message,
+      buttons: ['OK'],
+    });
+
+    await alert.present();
   }
 
 }

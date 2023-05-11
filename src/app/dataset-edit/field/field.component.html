@@ -7,6 +7,7 @@
     <ion-button *ngIf="public_date" slot="end" color="success" (click)="makePrivate()" [disabled]="!may_edit">Public</ion-button>
     <ion-button *ngIf="!public_date" slot="end" color="danger" (click)="makePublic()" [disabled]="!may_edit">Private</ion-button>
   </ion-item>
+  <!-- TODO: I don't remember this logic. shouldn't this just be updated_at? If you have permission to updated_at you can view -->
   <div *ngIf="!uuid || public_date || updated_at">
     <ion-item lines="inset" [style.--highlight-height]="may_edit ? '2px' : '0px'">
       <ion-label>Name:</ion-label>

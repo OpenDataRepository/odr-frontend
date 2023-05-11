@@ -8,6 +8,8 @@ import { RecordService } from '../api/record.service';
 import { RecordViewPage } from './record-view.page';
 import { Component } from '@angular/core';
 import { RecordComponent } from './record/record.component';
+import { PermissionService } from '../api/permission.service';
+import { AuthService } from '../auth.service';
 
 describe('RecordViewPage', () => {
   let component: RecordViewPage;
@@ -43,6 +45,15 @@ describe('RecordViewPage', () => {
     }
   }
 
+  class PermissionServiceMock {
+    hasPermission = (uuid: string, permission: string ) => {
+      return of(true);
+    }
+  }
+
+  class AuthServiceMock {
+  }
+
   @Component({
     selector: 'app-header',
     template: '<p>Mock App header</p>'
@@ -60,6 +71,8 @@ describe('RecordViewPage', () => {
         { provide: ActivatedRoute, useClass: ActivatedRouteMock },
         { provide: RecordService, useClass: RecordServiceMock },
         { provide: ApiService, useClass: ApiServiceMock },
+        { provide: PermissionService, useClass: PermissionServiceMock },
+        { provide: AuthService, useClass: AuthServiceMock },
       ],
       imports: [
         IonicModule.forRoot(),

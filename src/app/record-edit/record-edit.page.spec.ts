@@ -9,6 +9,7 @@ import { ApiService } from '../api/api.service';
 import { RecordEditPage } from './record-edit.page';
 import { RecordComponent } from './record/record.component';
 import { RecordService } from '../api/record.service';
+import { PermissionService } from '../api/permission.service';
 
 describe('RecordEditPage', () => {
   let component: RecordEditPage;
@@ -53,6 +54,12 @@ describe('RecordEditPage', () => {
     };
   }
 
+  class PermissionServiceMock {
+    hasPermission = (uuid: string, permission: string ) => {
+      return of(true);
+    }
+  }
+
   // @Component({selector: 'record-edit', template: ''})
   // class RecordEditStubComponent {
   //   @Input()
@@ -78,7 +85,8 @@ describe('RecordEditPage', () => {
         { provide: ActivatedRoute, useClass: ActivatedRouteMock },
         { provide: ApiService, useClass: ApiServiceMock },
         { provide: RecordService, useClass: RecordServiceMock },
-        FormBuilder
+        FormBuilder,
+        { provide: PermissionService, useClass: PermissionServiceMock }
       ],
       imports: [
         IonicModule.forRoot(),

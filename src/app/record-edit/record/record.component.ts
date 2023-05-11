@@ -1,8 +1,9 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, ViewChild } from '@angular/core';
 import { FormGroup, FormControl, FormArray, FormBuilder, Validators, AbstractControl } from '@angular/forms';
 import { AlertController, IonModal } from '@ionic/angular';
 import { switchMap, of, from, forkJoin, take } from 'rxjs';
 import { ApiService } from 'src/app/api/api.service';
+import { PermissionService } from 'src/app/api/permission.service';
 import { RecordService } from 'src/app/api/record.service';
 
 @Component({
@@ -10,7 +11,7 @@ import { RecordService } from 'src/app/api/record.service';
   templateUrl: './record.component.html',
   styleUrls: ['./record.component.scss'],
 })
-export class RecordComponent implements OnInit {
+export class RecordComponent implements OnInit, OnChanges {
 
   @Input()
   is_top_level_record: boolean = false;
@@ -18,6 +19,9 @@ export class RecordComponent implements OnInit {
   @Input()
   form: FormGroup|any = new FormGroup({name: new FormControl(), fields: new FormArray([]),
     related_records: new FormArray([])});
+
+  @Input()
+  disabled: boolean = false;
 
   @Output()
   remove: EventEmitter<void> = new EventEmitter<void>();
@@ -27,10 +31,17 @@ export class RecordComponent implements OnInit {
   records_available = false;
   records_to_link: any = [];
 
-  constructor(private _fb: FormBuilder, private api: ApiService, private recordService: RecordService,
-    private alertController: AlertController) {}
+  edit_permission = false;
 
-  ngOnInit() {
+  constructor(private _fb: FormBuilder, private api: ApiService, private recordService: RecordService,
+    private alertController: AlertController, private permissionService: PermissionService) {}
+
+  ngOnInit() {}
+
+  ngOnChanges() {
+    if(!this.disabled && this.dataset_uuid) {
+      this.permissionService.hasPermission(this.dataset_uuid, 'edit').subscribe(result => {this.edit_permission = result as boolean;});
+    }
   }
 
   deleteRelatedRecord(index: number) {
@@ -67,7 +78,6 @@ export class RecordComponent implements OnInit {
     this.records_available = false;
     this.records_to_link = [];
 
-    // TODO: this is wrong. It should be the records of the related_datasets that we link, not the records of this dataset
     let observables = this.related_datasets.map((d: any) => this.api.datasetRecords(d.uuid).pipe(take(1)))
     forkJoin(observables).subscribe((results: any) => {
       // TODO: consider removing related_records already on the record
@@ -126,8 +136,26 @@ export class RecordComponent implements OnInit {
     return this.form.get("related_records") as FormArray;
   }
 
+  get uuid() { return this.form.get('uuid'); }
+
+  get dataset_uuid(): string {
+    return this.form.get('dataset_uuid')?.value;
+  }
+
+  get dataset_name() { return this.form.get('dataset')?.value.name; }
+
   get related_datasets(): any[] {
     return this.form.get('dataset')?.value.related_datasets;
+  }
+
+  get may_edit() { return !this.disabled && this.edit_permission; }
+
+  get public(): boolean {
+    return !!this.form.get('dataset')?.value.public_date;
+  }
+
+  get hasViewPermission(): boolean {
+    return !this.form.get('no_permissions');
   }
 
   getRelatedDatasetForRelatedForm(form: any) {
@@ -139,10 +167,6 @@ export class RecordComponent implements OnInit {
     }
     throw "Related dataset not found";
   }
-
-  get name() { return this.form.get('name'); }
-
-  get uuid() { return this.form.get('uuid'); }
 
   saveDraft() {
     let record_object = this.convertFormToRecordObject(this.form as FormGroup);
@@ -168,6 +192,13 @@ export class RecordComponent implements OnInit {
   }
 
   private convertFormToRecordObject(form: FormGroup): any {
+    if(form.contains('no_permissions')) {
+      // No view permissions
+      return {
+        uuid: form.get('uuid')?.value,
+        dataset_uuid: form.get('dataset_uuid')?.value,
+      };
+    }
     let fields = [];
     for(let field_form of (form.get("fields") as FormArray).controls) {
       fields.push(this.convertFormToFieldObject(field_form as FormGroup));
@@ -195,6 +226,14 @@ export class RecordComponent implements OnInit {
   }
 
   public convertRecordObjectToForm(record_object: any, dataset: any) {
+    if(record_object.no_permissions) {
+      // No view permissions
+      return this._fb.group({
+        uuid: record_object.uuid,
+        dataset_uuid: record_object.dataset_uuid,
+        no_permissions: true
+      });
+    }
     let form = this._fb.group({
       uuid: record_object.uuid,
       dataset_uuid: record_object.dataset_uuid,
@@ -206,7 +245,7 @@ export class RecordComponent implements OnInit {
       for(let field of record_object.fields) {
         (form.get("fields") as FormArray).push(this._fb.group({
           uuid: new FormControl(field.uuid),
-          name: new FormControl(field.name, [Validators.required]),
+          name: new FormControl(field.name),
           description: new FormControl(field.description),
           value: new FormControl(field.value ? field.value : "")
         }));
