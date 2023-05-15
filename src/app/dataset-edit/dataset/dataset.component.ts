@@ -307,6 +307,12 @@ export class DatasetComponent implements OnInit, OnChanges {
     if(form.get('public_date')) {
       field.public_date = form.get('public_date')?.value;
     }
+    if(form.get('type')) {
+      let type = form.get('type')?.value;
+      if(type != 'none') {
+        field.type = type;
+      }
+    }
     return field;
   }
 
@@ -327,6 +333,11 @@ export class DatasetComponent implements OnInit, OnChanges {
     }
     if(field.updated_at) {
       field_form.addControl('updated_at', new FormControl(field.updated_at));
+    }
+    if(field.type) {
+      field_form.addControl('type', new FormControl(field.type));
+    } else {
+      field_form.addControl('type', new FormControl('none'));
     }
     return field_form;
   }
@@ -369,6 +380,20 @@ export class DatasetComponent implements OnInit, OnChanges {
     return form;
   }
 
+  private copyOptionalFieldToComponentForm(field_name: string, new_form: FormGroup) {
+    if(new_form.contains(field_name)) {
+      if(this.form.contains(field_name)) {
+        this.form.controls[field_name].setValue(new_form.get(field_name)?.value);
+      } else {
+        this.form.addControl(field_name, new FormControl(new_form.get(field_name)?.value))
+      }
+    } else {
+      try {
+        this.form.removeControl(field_name);
+      } catch (err) {}
+    }
+  }
+
   private copyNewFormToComponentForm(new_form: FormGroup) {
 
     this.form.controls['dataset_uuid'].setValue(new_form.get('dataset_uuid')?.value);
@@ -389,17 +414,8 @@ export class DatasetComponent implements OnInit, OnChanges {
 
     this.form.controls['name'].setValue(new_form.get('name')?.value);
 
-    if(new_form.contains('public_date')) {
-      if(this.form.contains('public_date')) {
-        this.form.controls['public_date'].setValue(new_form.get('public_date')?.value);
-      } else {
-        this.form.addControl('public_date', new FormControl(new_form.get('public_date')?.value))
-      }
-    } else {
-      try {
-        this.form.removeControl('public_date');
-      } catch (err) {}
-    }
+    this.copyOptionalFieldToComponentForm('public_date', new_form);
+    this.copyOptionalFieldToComponentForm('type', new_form);
 
     this.form.removeControl('fields');
     this.form.addControl('fields', new_form.get('fields'));

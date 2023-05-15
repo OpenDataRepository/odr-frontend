@@ -18,6 +18,19 @@
       <ion-label>Description:</ion-label>
       <ion-input formControlName="description" [placeholder]="may_edit ? 'Enter name here...' : ''" [readonly]="!may_edit"></ion-input>
     </ion-item>
+    <ion-item lines="none">Field Type: </ion-item>
+    <ion-list class="ion-margin">
+      <ion-radio-group value="none" formControlName="type">
+        <ion-item>
+          <ion-label>None (text)</ion-label>
+          <ion-radio value="none"></ion-radio>
+        </ion-item>
+        <ion-item>
+          <ion-label>File</ion-label>
+          <ion-radio value="File"></ion-radio>
+        </ion-item>
+      </ion-radio-group>
+    </ion-list>
   </div>
   <ion-item *ngIf="!disabled">
     <ion-button (click)="remove.emit()" color="danger">Remove Field</ion-button>

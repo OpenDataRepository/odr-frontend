@@ -32,7 +32,7 @@ describe('FieldComponent', () => {
   it('should create', () => {
     fixture = TestBed.createComponent(FieldComponent);
     component = fixture.componentInstance;
-    component.form = new FormGroup({name: new FormControl(), description: new FormControl()});
+    component.form = new FormGroup({name: new FormControl(), description: new FormControl(), type: new FormControl()});
     fixture.detectChanges();
     expect(component).toBeTruthy();
   });
@@ -41,7 +41,7 @@ describe('FieldComponent', () => {
     fixture = TestBed.createComponent(FieldComponent);
     component = fixture.componentInstance;
     debugElement = fixture.debugElement.nativeElement;
-    component.form = new FormGroup({name: new FormControl(), description: new FormControl()});
+    component.form = new FormGroup({name: new FormControl(), description: new FormControl(), type: new FormControl()});
     fixture.detectChanges();
     expect(component).toBeTruthy();
     expect(component.may_edit).toBe(true);
