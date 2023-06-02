@@ -35,7 +35,10 @@ export class RecordEditPage implements OnInit {
       return;
     }
     this.uuid = uuid as string;
+    this.fetchDataAndSetForm();
+  }
 
+  private fetchDataAndSetForm() {
     let temp_record: any;
     this.recordService.fetchLatestRecord(this.uuid).pipe(
       switchMap((record: any) => {
@@ -44,7 +47,8 @@ export class RecordEditPage implements OnInit {
       })
     ).subscribe(dataset => {
       this.dataset = dataset;
-      this.form = this.record_component.convertRecordObjectToForm(temp_record, dataset);
+      let file_upload_progress_map = (this.form && this.form.get('file_upload_progress_map')) ? this.form.get('file_upload_progress_map').value : {};
+      this.form = this.record_component.convertRecordObjectToForm(temp_record, dataset, file_upload_progress_map);
     });
   }
 
@@ -60,7 +64,7 @@ export class RecordEditPage implements OnInit {
 
   saveDraft() {
     this.record_component.saveDraft().subscribe(() => {
-      this.exitEditMode();
+      this.fetchDataAndSetForm();
     });
   }
 

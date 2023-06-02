@@ -8,8 +8,30 @@
   <ion-item lines="inset">
     <ion-label>Description: {{ form.get('description')?.value }}</ion-label>
   </ion-item>
-  <ion-item lines="inset">
+  <ion-item lines="inset" *ngIf="!is_file">
     <ion-label>Value:</ion-label>
     <ion-input formControlName="value" [placeholder]="may_edit ? 'Enter value here...' : ''" [readonly]="!may_edit"></ion-input>
   </ion-item>
+  <div *ngIf="is_file">
+    <ion-item lines="none">File:</ion-item>
+    <div class="ion-margin-start">
+      <ion-item *ngIf="file_name">
+        <ion-label>{{file_name}}</ion-label>
+        <ion-button (click)="downloadFile()"> Download </ion-button>
+      </ion-item>
+      <ion-item lines="none">
+        <ion-label *ngIf="file_name">Change file:</ion-label>
+        <ion-input type="file" (change)="onFileSelected($event)"> </ion-input>
+      </ion-item>
+      <div class="ion-margin-start" *ngIf="form.get('file_upload_progress_map') && file_upload_progress_map[file_uuid] && file_upload_progress_map[file_uuid] > 0">
+        <p>Upload progress:</p>
+        <mat-progress-spinner
+          class="example-margin"
+          color="primary"
+          mode="determinate"
+          [value]="file_upload_progress_map[file_uuid]"
+        ></mat-progress-spinner>
+      </div>
+    </div>
+  </div>
 </form>

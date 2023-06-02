@@ -5,6 +5,7 @@ import { FieldComponent } from './field.component';
 import { of } from 'rxjs';
 import { PermissionService } from 'src/app/api/permission.service';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ApiService } from 'src/app/api/api.service';
 
 describe('RecordEditFieldComponent', () => {
   let component: FieldComponent;
@@ -16,10 +17,16 @@ describe('RecordEditFieldComponent', () => {
     }
   }
 
+  class ApiServiceMock {
+  }
+
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ FieldComponent ],
-      providers: [{ provide: PermissionService, useClass: PermissionServiceMock }],
+      providers: [
+        { provide: PermissionService, useClass: PermissionServiceMock },
+        { provide: ApiService, useClass: ApiServiceMock }
+      ],
       imports: [
         IonicModule.forRoot(),
         ReactiveFormsModule

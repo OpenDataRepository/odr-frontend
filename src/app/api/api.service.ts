@@ -1,16 +1,17 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpRequest } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, of, switchMap } from 'rxjs';
+import { of, switchMap } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { AuthService } from '../auth.service';
-
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
 
-  constructor(private http: HttpClient, private auth: AuthService) { }
+  constructor(private http: HttpClient, private auth: AuthService) {
+
+   }
 
   private reqHeader() {
     return this.auth.token
@@ -19,6 +20,19 @@ export class ApiService {
         var header_options: any = {
           'Content-Type': 'application/json'
         };
+        if(token) {
+          header_options['Authorization'] = token;
+        }
+        return of(new HttpHeaders(header_options));
+      })
+    );
+  }
+
+  private authHeader() {
+    return this.auth.token
+    .pipe(
+      switchMap(token => {
+        var header_options: any = {};
         if(token) {
           header_options['Authorization'] = token;
         }
@@ -462,6 +476,50 @@ export class ApiService {
     )
   }
 
+
+  uploadFileDirect(uuid: string, file: any) {
+    let headers: HttpHeaders;
+    return this.authHeader()
+    .pipe(
+      switchMap((hdrs: HttpHeaders) => {
+        console.log(`setting file size to ${file.size.toString()}`);
+        headers = hdrs.append('size', file.size.toString())
+        return this.http.get(environment.backend_url + "/file/" + uuid + "/directUploadStatus", { headers: headers })
+      }),
+      switchMap((res: any) => {
+        if (res.status === "file is present") {
+          console.error(`trying to upload to existing file ${uuid}`)
+          return of({type: "canceled"});
+        }
+        let uploadedBytes = res.uploaded; //GET response how much file is uploaded
+        headers = headers.append("x-start-byte", uploadedBytes.toString());
+        // Useful for showing animation of Mat Spinner
+        const req = new HttpRequest(
+          "POST",
+          environment.backend_url + "/file/" + uuid + "/direct",
+          file.slice(uploadedBytes, file.size + 1),
+          {
+            headers,
+            reportProgress: true //continously fetch data from server of how much file is uploaded
+          }
+        );
+        return this.http.request(req);
+      })
+    )
+  }
+
+  fetchFile(uuid: string) {
+    return this.authHeader()
+    .pipe(
+      switchMap((headers: HttpHeaders) => {
+        return this.http
+        .get(
+          environment.backend_url +  '/file/' + uuid,
+          { headers, 'responseType': "blob" }
+        );
+      })
+    )
+  }
 }
 
 export namespace ApiService {

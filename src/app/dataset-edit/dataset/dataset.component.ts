@@ -29,7 +29,6 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   @ViewChild('link_dataset_modal') link_dataset_modal!: IonModal;
 
-  // TODO: this and link_dataset_modal need to each have an id now
   @ViewChild('link_field_modal') link_field_modal!: IonModal;
 
   user_datasets_loaded = false;

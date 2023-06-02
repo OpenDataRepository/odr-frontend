@@ -1,7 +1,8 @@
+import { HttpEventType } from '@angular/common/http';
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, ViewChild } from '@angular/core';
 import { FormGroup, FormControl, FormArray, FormBuilder, Validators, AbstractControl } from '@angular/forms';
 import { AlertController, IonModal } from '@ionic/angular';
-import { switchMap, of, from, forkJoin, take } from 'rxjs';
+import { switchMap, of, from, forkJoin, take, Observable } from 'rxjs';
 import { ApiService } from 'src/app/api/api.service';
 import { PermissionService } from 'src/app/api/permission.service';
 import { RecordService } from 'src/app/api/record.service';
@@ -121,7 +122,7 @@ export class RecordComponent implements OnInit, OnChanges {
           if(!dataset) {
             throw new Error('Cannot find dataset for record ' + uuid)
           }
-          this.related_records_form_array.push(this.convertRecordObjectToForm(related_record_object, dataset));
+          this.related_records_form_array.push(this.convertRecordObjectToForm(related_record_object, dataset, this.form.get('file_upload_progress_map')?.value));
           return this.saveDraft();
         }
       })
@@ -182,26 +183,61 @@ export class RecordComponent implements OnInit, OnChanges {
     throw "Related dataset not found";
   }
 
+  private static buildUuidFileMapFromForm(form: FormGroup, map: Record<string, any>) {
+    for(let field_form of (form.get("fields") as FormArray).controls){
+      if((field_form as FormGroup).contains('file')) {
+        let file_object = field_form.get('file')?.value;
+        if(file_object.uuid && file_object.uuid == "new") {
+          map[file_object.front_end_uuid] = file_object.file_to_upload;
+        }
+      }
+    }
+    for(let related_record of (form.get("related_records") as FormArray).controls){
+      RecordComponent.buildUuidFileMapFromForm(related_record as FormGroup, map);
+    }
+  }
+
+  private uploadAllFiles(front_end_uuid_to_back_end_uuid_map: Record<string, string>) {
+    let uuid_to_file_map: Record<string, any> = {};
+    RecordComponent.buildUuidFileMapFromForm(this.form, uuid_to_file_map);
+    let file_upload_progress_map = this.form.get('file_upload_progress_map')?.value;
+    for(const front_end_uuid of Object.keys(uuid_to_file_map)) {
+      const file = uuid_to_file_map[front_end_uuid];
+      if(!(front_end_uuid in front_end_uuid_to_back_end_uuid_map)) {
+        throw new Error('Front end uuid not found in uuid map returned from create/update call')
+      }
+      const back_end_uuid = front_end_uuid_to_back_end_uuid_map[front_end_uuid];
+      this.api.uploadFileDirect(back_end_uuid, file).subscribe(
+        (res: any) => {
+          if(res.type == 'canceled'){
+            return;
+          }
+          if (res.type === HttpEventType.UploadProgress) {
+            let upload_percent = Math.round((100 * res.loaded) / res.total);
+            file_upload_progress_map[back_end_uuid] = upload_percent;
+          }
+        }
+      );
+    }
+  }
+
   saveDraft() {
     let record_object = this.convertFormToRecordObject(this.form as FormGroup);
     return this.api.updateRecord(record_object).pipe(
       switchMap((response: any) => {
-          let lastStepsCallback = (record: any) => {
-            let new_form = this.convertRecordObjectToForm(record, this.form.get('dataset')?.value);
-            this.copyNewFormToComponentForm(new_form);
-            return of({});
-          }
-          if(response.record) {
-            return lastStepsCallback(response.record);
-          } else {
-            return this.api.fetchRecordLatestPersisted(this.uuid.value).pipe(
-              switchMap((record: any) => {
-                return lastStepsCallback(record);
-              })
-            )
-          }
+        if(response.record) {
+          let file_uuid_map = response.upload_file_uuids;
+          this.uploadAllFiles(file_uuid_map);
+          return of(response.record);
+        } else {
+          return this.api.fetchRecordLatestPersisted(this.uuid.value);
         }
-      )
+      }),
+      switchMap((record: any) => {
+        let new_form = this.convertRecordObjectToForm(record, this.form.get('dataset')?.value, this.form.get('file_upload_progress_map')?.value);
+        this.copyNewFormToComponentForm(new_form);
+        return of({});
+      })
     )
   }
 
@@ -232,16 +268,26 @@ export class RecordComponent implements OnInit, OnChanges {
   }
 
   private convertFormToFieldObject(form: FormGroup) {
-    let field: any = {
+    let field: Record<string, any> = {
       uuid: form.get('uuid')?.value,
       name: form.get('name') ? form.get('name')?.value : "",
       description: form.get('description') ? form.get('description')?.value : "",
-      value: form.get('value') ? form.get('value')?.value : ""
     };
+    if(form.contains('file')) {
+      let file = (form.get('file') as FormControl).value;
+      let file_uuid = file.uuid;
+      field['file'] = {
+        uuid: file_uuid ? file_uuid : "new",
+        name: file.name,
+        front_end_uuid: file.front_end_uuid
+      }
+    } else {
+      field['value'] = form.get('value') ? form.get('value')?.value : ""
+    }
     return field;
   }
 
-  public convertRecordObjectToForm(record_object: any, dataset: any) {
+  public convertRecordObjectToForm(record_object: any, dataset: any, file_upload_progress_map: Record<string, number>) {
     if(record_object.no_permissions) {
       // No view permissions
       return this._fb.group({
@@ -255,19 +301,32 @@ export class RecordComponent implements OnInit, OnChanges {
       dataset_uuid: record_object.dataset_uuid,
       fields: this._fb.array([]),
       related_records: this._fb.array([]),
-      dataset
+      dataset,
+      file_upload_progress_map
     })
     if(record_object.public_date) {
       form.addControl('public_date', new FormControl(record_object.public_date));
     }
     if(record_object.fields) {
       for(let field of record_object.fields) {
-        (form.get("fields") as FormArray).push(this._fb.group({
+        let fields: FormArray = (form.get("fields") as FormArray);
+        let new_field: FormGroup = this._fb.group({
           uuid: new FormControl(field.uuid),
           name: new FormControl(field.name),
           description: new FormControl(field.description),
           value: new FormControl(field.value ? field.value : "")
-        }));
+        });
+        if(field.type) {
+          new_field.addControl("type", new FormControl(field.type))
+        }
+        if(field.file) {
+          new_field.addControl("file", this._fb.control({
+            uuid: field.file.uuid,
+            name: field.file.name
+          }))
+          new_field.addControl("file_upload_progress_map", new FormControl(file_upload_progress_map));
+        }
+        fields.push(new_field);
       }
     }
     let dataset_map: any = {};
@@ -279,7 +338,7 @@ export class RecordComponent implements OnInit, OnChanges {
     if(record_object.related_records) {
       for(let related_record of record_object.related_records) {
         (form.get("related_records") as FormArray)
-          .push(this.convertRecordObjectToForm(related_record, dataset_map[related_record.dataset_uuid]));
+          .push(this.convertRecordObjectToForm(related_record, dataset_map[related_record.dataset_uuid], file_upload_progress_map));
       }
     }
     return form;

@@ -10,6 +10,7 @@ import { RecordEditPage } from './record-edit.page';
 import { RecordComponent } from './record/record.component';
 import { HeaderModule } from '../header/header.module';
 import { FieldComponent } from './field/field.component';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @NgModule({
   imports: [
@@ -18,7 +19,8 @@ import { FieldComponent } from './field/field.component';
     IonicModule,
     RecordEditPageRoutingModule,
     ReactiveFormsModule,
-    HeaderModule
+    HeaderModule,
+    MatProgressSpinnerModule
   ],
   declarations: [RecordEditPage, RecordComponent, FieldComponent]
 })

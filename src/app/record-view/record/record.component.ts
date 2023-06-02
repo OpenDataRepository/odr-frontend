@@ -1,4 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
+import { ApiService } from 'src/app/api/api.service';
 
 @Component({
   selector: 'record-view',
@@ -22,8 +23,19 @@ export class RecordComponent implements OnInit {
     return !this.record?.no_permissions;
   }
 
-  constructor() { }
+  constructor(private api: ApiService) { }
 
   ngOnInit() {}
+
+  downloadFile(file_uuid: string, file_name: string) {
+    this.api.fetchFile(file_uuid).subscribe((response: any) => {
+      // https://www.youtube.com/watch?v=tAIxMGUEMqE
+      let blob: Blob = new Blob([response]);
+      let a = document.createElement('a');
+      a.download=file_name;
+      a.href = window.URL.createObjectURL(blob);
+      a.click();
+    });
+  }
 
 }
