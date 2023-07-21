@@ -11,6 +11,7 @@ import { DatasetComponent } from './dataset/dataset.component';
 import { ApiService } from '../api/api.service';
 import { HeaderComponent } from '../header/header.component';
 import { PermissionService } from '../api/permission.service';
+import { PluginsService } from '../shared/plugins.service';
 
 describe('DatasetEditPage', () => {
   let component: DatasetEditPage;
@@ -52,6 +53,9 @@ describe('DatasetEditPage', () => {
     }
   }
 
+  class PluginsServiceMock {
+  }
+
   @Component({
     selector: 'app-header',
     template: '<p>Mock App header</p>'
@@ -70,7 +74,8 @@ describe('DatasetEditPage', () => {
         { provide: DatasetService, useClass: DatasetServiceMock },
         { provide: ApiService, useClass: ApiServiceMock },
         FormBuilder,
-        { provide: PermissionService, useClass: PermissionServiceMock }
+        { provide: PermissionService, useClass: PermissionServiceMock },
+        { provide: PluginsService, useClass: PluginsServiceMock }
       ],
       imports: [
         IonicModule.forRoot(),

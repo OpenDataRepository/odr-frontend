@@ -6,6 +6,8 @@ import { PermissionService } from '../../api/permission.service';
 import { ApiService } from 'src/app/api/api.service';
 import { AlertController, IonModal } from '@ionic/angular';
 import { FieldService } from 'src/app/api/field.service';
+import { EditPluginMap } from 'src/app/shared/plugin-map';
+import { PluginsService } from 'src/app/shared/plugins.service';
 
 @Component({
   selector: 'dataset-edit',
@@ -31,6 +33,8 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   @ViewChild('link_field_modal') link_field_modal!: IonModal;
 
+  @ViewChild('add_plugin_modal') add_plugin_modal!: IonModal;
+
   user_datasets_loaded = false;
   public_datasets_loaded = false;
   user_datasets_to_link: any = [];
@@ -45,7 +49,7 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   constructor(private _fb: FormBuilder, private datasetService: DatasetService, private api: ApiService,
     private alertController: AlertController, private permissionService: PermissionService,
-    private fieldService: FieldService) {}
+    private fieldService: FieldService, private pluginsService: PluginsService) {}
 
   ngOnInit() {
   }
@@ -71,7 +75,8 @@ export class DatasetComponent implements OnInit, OnChanges {
   addField() {
     this.fields_form_array.push(this._fb.group({
       name: new FormControl(null, [Validators.required]),
-      description: new FormControl(null)
+      description: new FormControl(null),
+      type: new FormControl('none')
     }));
   }
 
@@ -140,7 +145,9 @@ export class DatasetComponent implements OnInit, OnChanges {
             template_id: related_dataset_object.template_id,
             name: new FormControl(null, [Validators.required]),
             fields: this._fb.array([]),
-            related_datasets: this._fb.array([])
+            related_datasets: this._fb.array([]),
+            template_plugins: {field_plugins: {}, object_plugins: {}},
+            dataset_plugins: {field_plugins: {}, object_plugins: {}}
           })
         )
         return this.saveDraft();
@@ -231,6 +238,8 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   get uuid() { return this.form.get('dataset_uuid'); }
 
+  get template_uuid() { return this.form.get('template_uuid'); }
+
   get public_date() { return this.form.get('public_date'); }
 
   get public(): boolean {
@@ -242,6 +251,22 @@ export class DatasetComponent implements OnInit, OnChanges {
   }
 
   get may_edit() { return !this.disabled && this.edit_permission; }
+
+  get all_object_plugins(): Record<string, number[]> {
+    return this.pluginsService.all_dataset_plugins;
+  }
+
+  get all_object_plugin_keys(): string[] {
+    return this.pluginsService.all_dataset_plugins_keys;
+  }
+
+  get current_plugins(): EditPluginMap {
+    return this.form.get('plugins')?.value;
+  }
+
+  get current_plugin_keys(): string[] {
+    return this.current_plugins ? this.current_plugins.keys : [];
+  }
 
   saveDraft() {
     let dataset_object = this.convertFormToDatasetObject(this.form as FormGroup);
@@ -277,15 +302,17 @@ export class DatasetComponent implements OnInit, OnChanges {
     for(let related_dataset_form of (form.get("related_datasets") as FormArray).controls) {
       related_datasets.push(this.convertFormToDatasetObject(related_dataset_form as FormGroup));
     }
-    return {
+    let dataset_object: Record<string, any> = {
       dataset_uuid: form.get('dataset_uuid')?.value,
       template_uuid: form.get('template_uuid')?.value,
       template_id: form.get('template_id')?.value,
       name: form.get('name') ? form.get('name')?.value : "",
       public_date: form.get('public_date') ? form.get('public_date')?.value : undefined,
       fields,
-      related_datasets
+      related_datasets,
     };
+    this.addPluginsFromFormToDatasetObject(form, dataset_object);
+    return dataset_object;
   }
 
   private convertFormToFieldObject(form: FormGroup) {
@@ -357,7 +384,9 @@ export class DatasetComponent implements OnInit, OnChanges {
       template_id: dataset_object.template_id,
       name: [dataset_object.name, Validators.required],
       fields: this._fb.array([]),
-      related_datasets: this._fb.array([])
+      related_datasets: this._fb.array([]),
+      template_plugins: dataset_object.template_plugins ? dataset_object.template_plugins : {field_plugins: {}, object_plugins: {}},
+      dataset_plugins: dataset_object.dataset_plugins ? dataset_object.dataset_plugins : {field_plugins: {}, object_plugins: {}}
     })
     if(dataset_object.public_date) {
       form.addControl('public_date', new FormControl(dataset_object.public_date));
@@ -376,6 +405,7 @@ export class DatasetComponent implements OnInit, OnChanges {
         (form.get("related_datasets") as FormArray).push(this.convertDatasetObjectToForm(related_dataset));
       }
     }
+    this.addPluginsToForm(form);
     return form;
   }
 
@@ -421,6 +451,83 @@ export class DatasetComponent implements OnInit, OnChanges {
 
     this.form.removeControl('related_datasets');
     this.form.addControl('related_datasets', new_form.get('related_datasets'));
+  }
+
+  private addPluginsToForm(form: FormGroup) {
+    // fields
+    let template_plugin_object = form.get('template_plugins')?.value;
+    let dataset_plugin_object = form.get('dataset_plugins')?.value;
+    let template_field_plugin_map: any = {};
+    if(template_plugin_object  && "field_plugins" in template_plugin_object) {
+      for(let field_uuid in template_plugin_object.field_plugins) {
+        template_field_plugin_map[field_uuid] = template_plugin_object.field_plugins[field_uuid];
+      }
+    }
+    let dataset_field_plugin_map: any = {};
+    if(dataset_plugin_object && "field_plugins" in dataset_plugin_object) {
+      for(let field_uuid in dataset_plugin_object.field_plugins) {
+        dataset_field_plugin_map[field_uuid] = dataset_plugin_object.field_plugins[field_uuid];
+      }
+    }
+
+    this.permissionService.hasPermission(form.get('template_uuid')?.value, 'edit').subscribe(has_template_edit_permission => {
+      form.addControl('plugins', new FormControl(new EditPluginMap(template_plugin_object.object_plugins, dataset_plugin_object.object_plugins, has_template_edit_permission as boolean)));
+      for(let field_form of (form.get("fields") as FormArray).controls) {
+        let field_uuid = field_form.get('uuid')?.value;
+        let field_template_plugins = field_uuid in template_field_plugin_map ? template_field_plugin_map[field_uuid] : {};
+        let field_dataset_plugins = field_uuid in dataset_field_plugin_map ? dataset_field_plugin_map[field_uuid] : {};
+        (field_form as FormGroup).addControl('template_plugins', new FormControl(field_template_plugins));
+        (field_form as FormGroup).addControl('dataset_plugins', new FormControl(field_dataset_plugins));
+        (field_form as FormGroup).addControl('plugins', new FormControl(new EditPluginMap(field_template_plugins, field_dataset_plugins, has_template_edit_permission as boolean)))
+      }
+    })
+
+  }
+
+  private addPluginsFromFormToDatasetObject(form: FormGroup, existing_dataset_object: Record<string, any>) {
+    let template_plugin_object = form.get('template_plugins')?.value;
+    let dataset_plugin_object = form.get('dataset_plugins')?.value;
+
+    let template_plugins: any = {
+      object_plugins: template_plugin_object.object_plugins,
+      field_plugins: {}
+    };
+    let dataset_plugins: any = {
+      object_plugins: dataset_plugin_object.object_plugins,
+      field_plugins: {}
+    };
+
+    for(let field_form of (form.get("fields") as FormArray).controls) {
+      let field_uuid = field_form.get('uuid')?.value;
+      let field_template_plugins = field_form.get('template_plugins')?.value;
+      let field_dataset_plugins = field_form.get('dataset_plugins')?.value;
+      template_plugins.field_plugins[field_uuid] = field_template_plugins;
+      dataset_plugins.field_plugins[field_uuid] = field_dataset_plugins;
+    }
+    existing_dataset_object['template_plugins'] = template_plugins;
+    existing_dataset_object['dataset_plugins'] = dataset_plugins;
+  }
+
+  addPlugin(name: string, version: number) {
+    this.current_plugins.set(name, version);
+  }
+
+  editPlugin(name: string, version: number) {
+    this.current_plugins.set(name, version);
+  }
+
+  removePlugin(name: string) {
+    this.current_plugins.delete(name);
+  }
+
+  cancelAddPluginModal() {
+    this.add_plugin_modal.dismiss(null, 'cancel');
+  }
+
+  confirmAddPluginModal(name: string, event: Event) {
+    let version = (<any>event).detail.value;
+    this.addPlugin(name, version);
+    this.add_plugin_modal.dismiss(null, 'confirm');
   }
 
   private async presentAlert(message: string) {

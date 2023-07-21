@@ -1,0 +1,7 @@
+field_plugins:
+  chemistry:
+    - 0.1
+    - 0.2
+dataset_plugins:
+  graph:
+    - 0.1

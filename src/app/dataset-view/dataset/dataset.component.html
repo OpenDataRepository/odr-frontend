@@ -36,10 +36,23 @@
             <ion-item lines="inset" *ngIf="f.type">
               <ion-label>Type: {{ f.type }}</ion-label>
             </ion-item>
+            <ion-item lines="none">Plugins: </ion-item>
+            <ion-list class="ion-margin">
+              <ion-item *ngFor="let plugin_name of f.plugins.keys">
+                <ion-label>{{plugin_name}} v{{f.plugins.get(plugin_name)}}</ion-label>
+              </ion-item>
+            </ion-list>
           </div>
         </div>
       </div>
     </div>
+
+    <ion-item lines="none">Plugins: </ion-item>
+    <ion-list class="ion-margin">
+      <ion-item *ngFor="let plugin_name of dataset.plugins.keys">
+        <ion-label>{{plugin_name}} v{{dataset.plugins.get(plugin_name)}}</ion-label>
+      </ion-item>
+    </ion-list>
 
     <ion-item lines="none">Related Datasets:</ion-item>
     <div class="ion-margin">

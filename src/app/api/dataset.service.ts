@@ -8,6 +8,10 @@ import { ApiService } from './api.service';
 })
 export class DatasetService {
 
+  // TODO:
+  // Switch back to datasets referencing templates by uuid, except they reference drafts by default if the user has permission to the draft
+  // At first thought I think this would work, but I thought about this a long time in the past and at that time I didn't, so there's a good chance I'm wrong
+
   constructor(private api: ApiService) { }
 
   newEmptyDatasetAndTemplate() {
@@ -170,14 +174,16 @@ export class DatasetService {
     let template: any = {
       uuid: combined.template_uuid,
       fields: combined.fields,
-      related_templates: []
+      related_templates: [],
+      plugins: combined.template_plugins
     };
     let dataset: any = {
       name: combined.name,
       uuid: combined.dataset_uuid,
       template_id: combined.template_id,
       template_uuid: combined.template_uuid,
-      related_datasets: []
+      related_datasets: [],
+      plugins: combined.dataset_plugins
     };
     if(combined.public_date) {
       template.public_date = combined.public_date;
@@ -237,7 +243,9 @@ export class DatasetService {
       public_date: template.public_date ? template.public_date : dataset.public_date ? dataset.public_date : undefined,
       dataset_persist_date: dataset.persist_date,
       fields: template.fields,
-      related_datasets
+      related_datasets,
+      template_plugins: template.plugins ? template.plugins : {field_plugins: {}, object_plugins: {}},
+      dataset_plugins: dataset.plugins ? dataset.plugins : {field_plugins: {}, object_plugins: {}}
     };
   }
 

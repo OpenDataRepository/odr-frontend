@@ -22,7 +22,8 @@
         <app-field
             [form]="f"
             (remove)="deleteField(j)"
-            [disabled]="!may_edit">
+            [disabled]="!may_edit"
+            [template_uuid]="template_uuid?.value">
         </app-field>
       </div>
       <ion-item lines="none" *ngIf="may_edit">
@@ -74,6 +75,53 @@
           </ng-template>
         </ion-modal>
       </div>
+    </div>
+
+    <ion-item lines="none">Plugins: </ion-item>
+    <ion-list class="ion-margin">
+      <ion-item *ngFor="let plugin_name of current_plugin_keys">
+        <ion-label>{{plugin_name}} v{{current_plugins.get(plugin_name)}}</ion-label>
+        <!-- TODO: add popover to select version -->
+        <ion-button color="danger" (click)="removePlugin(plugin_name)">Remove</ion-button>
+      </ion-item>
+    </ion-list>
+    <div *ngIf="may_edit">
+      <ion-item  lines="none">
+        <ion-button [attr.id]="'add-plugin-' + uuid?.value">
+          Add Plugin
+        </ion-button>
+      </ion-item>
+      <ion-modal #add_plugin_modal [attr.trigger]="'add-plugin-' + uuid?.value">
+        <ng-template>
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-button (click)="cancelAddPluginModal()">Cancel</ion-button>
+              </ion-buttons>
+              <ion-title>Select a plugin to add</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content class="ion-padding">
+            <div>
+              <ion-item>
+                <ion-label><b>Plugins</b></ion-label>
+              </ion-item>
+              <ion-list>
+                <ion-item *ngFor="let plugin_name of all_object_plugin_keys" [detail]="false">
+                  <ion-label>{{ plugin_name }}</ion-label>
+                  <ion-select
+                    aria-label="Fruit"
+                    placeholder="Select version"
+                    (ionChange)="confirmAddPluginModal(plugin_name, $event)"
+                  >
+                    <ion-select-option *ngFor="let version of all_object_plugins[plugin_name]" [value]="version">v{{version}}</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </ion-list>
+            </div>
+          </ion-content>
+        </ng-template>
+      </ion-modal>
     </div>
 
     <ion-item lines="none">Related Datasets:</ion-item>

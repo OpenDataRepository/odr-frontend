@@ -77,7 +77,6 @@ export class AuthService {
   }
 
   private setUserData(email: string, token: string, expirationTime: string) {
-    console.log(`setUserData called. email: ${email}, token: ${token}, expirationDate: ${expirationTime}`);
     const user = new User(
       email,
       token,
@@ -115,7 +114,6 @@ export class AuthService {
       tokenExpirationDate: tokenExpirationDate,
       email: email
     });
-    console.log('storing auth data: '); console.log(data);
     Preferences.set({ key: 'authData', value: data });
   }
 

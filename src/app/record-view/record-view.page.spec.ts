@@ -10,6 +10,7 @@ import { Component } from '@angular/core';
 import { RecordComponent } from './record/record.component';
 import { PermissionService } from '../api/permission.service';
 import { AuthService } from '../auth.service';
+import { PluginsService } from '../shared/plugins.service';
 
 describe('RecordViewPage', () => {
   let component: RecordViewPage;
@@ -54,6 +55,9 @@ describe('RecordViewPage', () => {
   class AuthServiceMock {
   }
 
+  class PluginsServiceMock {
+  }
+
   @Component({
     selector: 'app-header',
     template: '<p>Mock App header</p>'
@@ -73,6 +77,7 @@ describe('RecordViewPage', () => {
         { provide: ApiService, useClass: ApiServiceMock },
         { provide: PermissionService, useClass: PermissionServiceMock },
         { provide: AuthService, useClass: AuthServiceMock },
+        { provide: PluginsService, useClass: PluginsServiceMock }
       ],
       imports: [
         IonicModule.forRoot(),

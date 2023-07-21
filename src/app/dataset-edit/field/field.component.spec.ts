@@ -6,6 +6,7 @@ import { FieldComponent } from './field.component';
 import { PermissionService } from 'src/app/api/permission.service';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { PluginsService } from 'src/app/shared/plugins.service';
 
 describe('FieldComponent', () => {
   let component: FieldComponent;
@@ -15,11 +16,15 @@ describe('FieldComponent', () => {
   class PermissionServiceMock {
   }
 
+  class PluginsServiceMock {
+  }
+
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ FieldComponent ],
       providers: [
-        { provide: PermissionService, useClass: PermissionServiceMock }
+        { provide: PermissionService, useClass: PermissionServiceMock },
+        { provide: PluginsService, useClass: PluginsServiceMock }
       ],
       imports: [
         IonicModule.forRoot(),

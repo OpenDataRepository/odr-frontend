@@ -9,6 +9,7 @@ import { ApiService } from 'src/app/api/api.service';
 import { PermissionService } from 'src/app/api/permission.service';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
+import { PluginsService } from 'src/app/shared/plugins.service';
 
 describe('DatasetEditComponent', () => {
   let component: DatasetComponent;
@@ -27,6 +28,12 @@ describe('DatasetEditComponent', () => {
   }
 
   class PermissionServiceMock {
+    hasPermission = () => {
+      return of(true);
+    }
+  }
+
+  class PluginsServiceMock {
   }
 
   let datasetService: any;
@@ -42,7 +49,8 @@ describe('DatasetEditComponent', () => {
         { provide: ApiService, useClass: ApiServiceMock },
         { provide: PermissionService, useClass: PermissionServiceMock },
         { provide: AlertController, useValue: alertControllerSpy },
-        ModalController
+        ModalController,
+        { provide: PluginsService, useClass: PluginsServiceMock }
       ],
       imports: [
         IonicModule.forRoot(),
@@ -70,7 +78,9 @@ describe('DatasetEditComponent', () => {
         'template_id': 'template_id',
         'name': 'name',
         'fields': [],
-        'related_datasets': []
+        'related_datasets': [],
+        template_plugins: {field_plugins: {}, object_plugins: {}},
+        dataset_plugins:  {field_plugins: {}, object_plugins: {}}
       }));
 
       TestBed.overrideProvider(DatasetService, { useValue: datasetService });
@@ -90,6 +100,8 @@ describe('DatasetEditComponent', () => {
         template_id: new FormControl(),
         fields: new FormArray([]),
         related_datasets: new FormArray([]),
+        template_plugins: new FormControl({field_plugins: {}, object_plugins: {}}),
+        dataset_plugins:  new FormControl({field_plugins: {}, object_plugins: {}})
       });
       fixture.detectChanges();
       expect(component).toBeTruthy();
@@ -126,8 +138,12 @@ describe('DatasetEditComponent', () => {
             template_id: new FormControl(),
             fields: new FormArray([]),
             related_datasets: new FormArray([]),
+            template_plugins: new FormControl({field_plugins: {}, object_plugins: {}}),
+            dataset_plugins:  new FormControl({field_plugins: {}, object_plugins: {}})
           })
         ]),
+        template_plugins: new FormControl({field_plugins: {}, object_plugins: {}}),
+        dataset_plugins:  new FormControl({field_plugins: {}, object_plugins: {}})
       });
       fixture.detectChanges();
       expect(component).toBeTruthy();

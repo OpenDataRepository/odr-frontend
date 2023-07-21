@@ -1,9 +1,10 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom, lastValueFrom } from 'rxjs';
+import { firstValueFrom, lastValueFrom, switchMap } from 'rxjs';
 import { DatasetService } from '../api/dataset.service';
 import { DatasetComponent } from './dataset/dataset.component';
+import { PluginsService } from '../shared/plugins.service';
 
 @Component({
   selector: 'app-dataset-edit',
@@ -18,7 +19,7 @@ export class DatasetEditPage implements OnInit {
   form: FormGroup|any = new FormGroup({name: new FormControl(), fields: new FormArray([]),
     related_datasets: new FormArray([])});
 
-  constructor(private route: ActivatedRoute, private router: Router, private datasetService: DatasetService) { }
+  constructor(private route: ActivatedRoute, private router: Router, private datasetService: DatasetService, private pluginsService: PluginsService) { }
 
   ngOnInit() {
   }
@@ -31,11 +32,8 @@ export class DatasetEditPage implements OnInit {
       return;
     }
     this.uuid = uuid as string;
-
-    this.datasetService.fetchLatestDatasetAndTemplate(this.uuid).subscribe({
-      next: (dataset: any) => { this.form = this.dataset_component.convertDatasetObjectToForm(dataset); },
-      // TODO: 404 if null and render otherwise
-      error: (err: any) => { console.log('HTTP Error', err) }
+    this.datasetService.fetchLatestDatasetAndTemplate(this.uuid).subscribe((dataset) => {
+      this.form = this.dataset_component.convertDatasetObjectToForm(dataset);
     });
   }
 

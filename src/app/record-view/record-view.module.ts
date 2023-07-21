@@ -10,6 +10,7 @@ import { RecordViewPage } from './record-view.page';
 import { HeaderModule } from '../header/header.module';
 import { RecordComponent } from './record/record.component';
 import { ActivatedRoute } from '@angular/router';
+import { SharedModule } from '../shared/shared.module';
 
 @NgModule({
   imports: [
@@ -17,7 +18,8 @@ import { ActivatedRoute } from '@angular/router';
     FormsModule,
     IonicModule,
     RecordViewPageRoutingModule,
-    HeaderModule
+    HeaderModule,
+    SharedModule
   ],
   declarations: [RecordViewPage, RecordComponent]
 })
