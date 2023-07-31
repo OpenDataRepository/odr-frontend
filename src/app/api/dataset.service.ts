@@ -8,10 +8,6 @@ import { ApiService } from './api.service';
 })
 export class DatasetService {
 
-  // TODO:
-  // Switch back to datasets referencing templates by uuid, except they reference drafts by default if the user has permission to the draft
-  // At first thought I think this would work, but I thought about this a long time in the past and at that time I didn't, so there's a good chance I'm wrong
-
   constructor(private api: ApiService) { }
 
   newEmptyDatasetAndTemplate() {
@@ -116,23 +112,14 @@ export class DatasetService {
         return this.fetchLatestDataset(dataset_uuid);
       }),
       switchMap((dataset: any) => {
-        if(dataset.persist_date && !final_template.persist_date) {
-          console.error(`fetchSyncedDatasetAndTemplateDraft: latest dataset is persisted \
-          but latest template is a draft. deleting template draft: ${final_template.uuid}`)
-            return this.api.deleteTemplateDraft(final_template.uuid).pipe(
-              switchMap(() => {
-                return of(dataset);
-              })
-            );
-        }
-        else {
-          return this.modifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset, final_template);
-        }
+        return this.modifyDatasetTemplate_idsToMatchUpdatedTemplate(dataset, final_template);
       }),
       switchMap((dataset: any) => {
         return this.api.updateDataset(dataset);
       }),
       switchMap((updated_dataset) => {
+        console.log(final_template);
+        console.log(updated_dataset);
         return of(this.combineTemplateAndDataset(final_template, updated_dataset));
       })
     )

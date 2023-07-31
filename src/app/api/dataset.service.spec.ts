@@ -498,29 +498,33 @@ describe('fetchLatestDatasetAndTemplate', () => {
 
   it('dataset persisted and template draft - dataset draft is created', (done: DoneFn) => {
 
+    let old_persist_date = new Date();
+
     let prev_persisted_template = {
       uuid: "t_uuid",
-      _id: "t_id2",
-      name: "",
+      _id: "t_id1",
+      name: "template v1",
       updated_at: (new Date()).toISOString(),
+      persist_date: old_persist_date,
       fields: [],
       related_templates: []
     };
 
     let prev_persisted_dataset = {
       uuid: "d_uuid",
-      _id: "d_id2",
+      _id: "d_id1",
       template_id: prev_persisted_template._id,
       template_uuid: prev_persisted_template.uuid,
       name: "name",
+      persist_date: old_persist_date,
       updated_at: (new Date()).toISOString(),
       related_datasets: []
     };
 
     let return_template = {
       uuid: "t_uuid",
-      _id: "t_id",
-      name: "",
+      _id: "t_id2",
+      name: "template v2",
       updated_at: (new Date()).toISOString(),
       fields: [],
       related_templates: []
@@ -528,7 +532,7 @@ describe('fetchLatestDatasetAndTemplate', () => {
 
     let return_dataset = {
       uuid: "d_uuid",
-      _id: "d_id",
+      _id: "d_id2",
       template_id: return_template._id,
       template_uuid: return_template.uuid,
       name: "name",
@@ -550,7 +554,6 @@ describe('fetchLatestDatasetAndTemplate', () => {
     apiServiceSpy.fetchDatasetLatestPersisted.and.returnValue(of(prev_persisted_dataset));
     apiServiceSpy.fetchTemplateVersion.and.returnValue(of(prev_persisted_template));
     apiServiceSpy.updateDataset.and.returnValue(of(return_dataset));
-    apiServiceSpy.fetchTemplateVersion.and.returnValue(of(return_template));
 
     datasetService = new DatasetService(apiServiceSpy);
     datasetService.fetchLatestDatasetAndTemplate(uuid).subscribe(combined => {

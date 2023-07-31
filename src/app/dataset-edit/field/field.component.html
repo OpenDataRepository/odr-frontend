@@ -1,3 +1,5 @@
+<!-- TODO: Resolve this next. This is more complicated now, since plugins exist on the template, not on the field.
+Even if the user doesn't have edit access to the field, they can still edit plugins if they have edit access to the template. -->
 <form class="ion-margin"
   [ngClass]="{'gray-border': !may_edit, 'border': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}"
   [formGroup]="form">
@@ -9,28 +11,35 @@
   </ion-item>
   <!-- TODO: I don't remember this logic. shouldn't this just be updated_at? If you have permission to updated_at you can view -->
   <div *ngIf="!uuid || public_date || updated_at">
+
     <ion-item lines="inset" [style.--highlight-height]="may_edit ? '2px' : '0px'">
       <ion-label>Name:</ion-label>
       <ion-input formControlName="name" [placeholder]="may_edit ? 'Enter name here...' : ''" [readonly]="!may_edit"></ion-input>
       <ion-note slot="error">Name is required</ion-note>
     </ion-item>
+
     <ion-item lines="inset" [style.--highlight-height]="may_edit ? '2px' : '0px'">
       <ion-label>Description:</ion-label>
       <ion-input formControlName="description" [placeholder]="may_edit ? 'Enter name here...' : ''" [readonly]="!may_edit"></ion-input>
     </ion-item>
-    <ion-item lines="none">Field Type: </ion-item>
-    <ion-list class="ion-margin">
-      <ion-radio-group value="none" formControlName="type">
-        <ion-item>
-          <ion-label>None (text)</ion-label>
-          <ion-radio value="none"></ion-radio>
-        </ion-item>
-        <ion-item>
-          <ion-label>File</ion-label>
-          <ion-radio value="File"></ion-radio>
-        </ion-item>
-      </ion-radio-group>
-    </ion-list>
+
+    <div *ngIf="may_edit">
+      <ion-item lines="none">Field Type: </ion-item>
+      <ion-list class="ion-margin">
+        <ion-radio-group value="none" formControlName="type">
+          <ion-item>
+            <ion-label>None (text)</ion-label>
+            <ion-radio value="none"></ion-radio>
+          </ion-item>
+          <ion-item>
+            <ion-label>File</ion-label>
+            <ion-radio value="File"></ion-radio>
+          </ion-item>
+        </ion-radio-group>
+      </ion-list>
+    </div>
+    <ion-item *ngIf="!may_edit" lines="none">Field Type: {{ type.value }}</ion-item>
+
     <div *ngIf="!!uuid">
       <ion-item lines="none">Plugins: </ion-item>
       <ion-list class="ion-margin">
@@ -77,6 +86,7 @@
         </ion-modal>
       </div>
     </div>
+
   </div>
   <ion-item *ngIf="!disabled">
     <ion-button (click)="remove.emit()" color="danger">Remove Field</ion-button>

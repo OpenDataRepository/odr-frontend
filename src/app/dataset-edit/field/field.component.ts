@@ -47,6 +47,8 @@ export class FieldComponent implements OnInit, OnChanges {
 
   get updated_at() { return this.form.get('updated_at'); }
 
+  get type() { return this.form.get('type'); }
+
   get may_edit() { return !this.uuid || (!this.disabled && this.edit_permission); }
 
   get all_field_plugins(): Record<string, number[]> {
