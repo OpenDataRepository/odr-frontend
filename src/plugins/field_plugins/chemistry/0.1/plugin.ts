@@ -1,8 +1,8 @@
-module.exports = function(str) {
+export function transformData(str: string|undefined|null) {
   return applyChemistryFormatting('^', '_', str);
 }
 
-function applyChemistryFormatting(superscript_delimiter, subscript_delimiter, str) {
+function applyChemistryFormatting(superscript_delimiter: string, subscript_delimiter: string, str: string|undefined|null) {
 
   if(!str) {
     throw 'cannot apply chemistry formatting to null/undefined object';
@@ -26,6 +26,6 @@ function applyChemistryFormatting(superscript_delimiter, subscript_delimiter, st
   return str;
 }
 
-function escapeRegex(string) {
+function escapeRegex(string: string) {
   return string.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
 }

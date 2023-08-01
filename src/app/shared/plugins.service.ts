@@ -1,8 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
-import * as pluginsImport from '../../plugins/plugins';
-const pluginsFunctionObject = pluginsImport as Record<string, any>;
+import {field_plugins, dataset_plugins} from '../../plugins/plugins';
 const plugins_path = '../../plugins';
 const config_path = plugins_path + '/plugins.yml';
 
@@ -38,6 +37,6 @@ export class PluginsService {
   }
 
   getFieldPluginFunction(name: string, version: number) {
-    return pluginsFunctionObject['field_plugins'][name][version];
+    return field_plugins[name][version];
   }
 }

@@ -2,7 +2,8 @@ import { Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, ViewChi
 import { ApiService } from 'src/app/api/api.service';
 import { PluginsService } from 'src/app/shared/plugins.service';
 // import { saveAs } from 'file-saver';
-const GraphPlugin = require('../../../plugins/dataset_plugins/graph/0.1/plugin')
+import { graphCsvBlob } from '../../../plugins/dataset_plugins/graph/0.1/plugin';
+
 
 @Component({
   selector: 'record-view',
@@ -26,7 +27,7 @@ export class RecordComponent implements OnInit, OnChanges {
         let file_name = file.name;
         let file_uuid = file.uuid;
         this.api.fetchFile(file_uuid).subscribe(file_data => {
-          GraphPlugin(graph_plugin_element.nativeElement, file_data, file_name);
+          graphCsvBlob(graph_plugin_element.nativeElement, file_data, file_name);
           this.graphed = true;
         })
       }

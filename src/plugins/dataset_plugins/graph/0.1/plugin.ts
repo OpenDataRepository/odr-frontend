@@ -1,24 +1,22 @@
 var Plotly = require('plotly.js-dist');
 var Papa = require('papaparse');
 
-module.exports = graphCsvBlob;
-
-function graphCsvBlob(html_element, csvBlob, file_name) {
+export function graphCsvBlob(html_element: any, csvBlob: Blob, file_name?: string) {
   convertCsvBlobToString(csvBlob).then((csvString) => {
-    Papa.parse(csvString, {complete: results => {
+    Papa.parse(csvString, {complete: (results: any) => {
       graph(html_element, results.data, file_name);
     }})
   })
 }
 
-function graphCsvFile(html_element, data_file_path) {
+function graphCsvFile(html_element: any, data_file_path: string) {
   // const file = new File([fs.readFileSync(data_file_path)], data_file_path.split('/').pop());
-  Papa.parse(data_file_path, {download: true, complete: results => {
+  Papa.parse(data_file_path, {download: true, complete: (results: any) => {
     graph(html_element, results.data, data_file_path.split('/').pop());
   }});
 }
 
-function graph(html_element, input_data, title) {
+function graph(html_element: any, input_data: any, title?: string) {
   let x_axis_name = input_data[0][0];
   let y_axis_name = input_data[0][1];
   input_data.shift();
@@ -41,7 +39,7 @@ function graph(html_element, input_data, title) {
   Plotly.newPlot(html_element, data, layout);
 }
 
-function transposeArray(array) {
+function transposeArray(array: any[]) {
   // Get number of rows and columns
   const rows = array.length;
   const cols = array[0].length;
@@ -62,7 +60,7 @@ function transposeArray(array) {
   return transposedArray;
 }
 
-function convertCsvBlobToString(csvBlob) {
+function convertCsvBlobToString(csvBlob: Blob) {
   return new Promise((resolve, reject) => {
     const fileReader = new FileReader();
 
