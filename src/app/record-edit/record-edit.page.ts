@@ -20,7 +20,10 @@ export class RecordEditPage implements OnInit {
     related_records: new FormArray([])});
   dataset: any;
 
-  constructor(private route: ActivatedRoute, private router: Router, private api: ApiService, private recordService: RecordService) { }
+  constructor(private route: ActivatedRoute,
+              private router: Router,
+              private api: ApiService,
+              private recordService: RecordService) { }
 
   ngOnInit() {
   }

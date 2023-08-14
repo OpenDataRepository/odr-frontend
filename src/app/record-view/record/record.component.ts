@@ -2,7 +2,7 @@ import { Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, ViewChi
 import { ApiService } from 'src/app/api/api.service';
 import { PluginsService } from 'src/app/shared/plugins.service';
 // import { saveAs } from 'file-saver';
-import { graphCsvBlob } from '../../../plugins/dataset_plugins/graph/0.1/plugin';
+import { graphCsvBlob } from 'src/plugins/dataset_plugins/graph/0.1/plugin';
 
 
 @Component({

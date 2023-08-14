@@ -1,5 +1,5 @@
 import { HttpEventType } from '@angular/common/http';
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { FormGroup, FormControl, FormArray, FormBuilder, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { AlertController, IonModal } from '@ionic/angular';
 import { switchMap, of, from, forkJoin, take, Observable } from 'rxjs';
@@ -7,6 +7,7 @@ import { ApiService } from 'src/app/api/api.service';
 import { PermissionService } from 'src/app/api/permission.service';
 import { RecordService } from 'src/app/api/record.service';
 import { PluginsService } from 'src/app/shared/plugins.service';
+import { graphCsvBlob } from 'src/plugins/dataset_plugins/graph/0.1/plugin';
 
 @Component({
   selector: 'record-edit',
@@ -30,6 +31,10 @@ export class RecordComponent implements OnInit, OnChanges {
 
   @ViewChild(IonModal) link_record_modal!: IonModal;
 
+  @ViewChild('graph_plugin') graphPluginRef!: ElementRef
+
+  graphed: boolean = false;
+
   records_available = false;
   records_to_link: any = [];
 
@@ -41,9 +46,31 @@ export class RecordComponent implements OnInit, OnChanges {
 
   ngOnInit() {}
 
-  ngOnChanges() {
+  ngOnChanges(changes: SimpleChanges) {
     if(!this.disabled && this.dataset_uuid) {
       this.permissionService.hasPermission(this.dataset_uuid, 'edit').subscribe(result => {this.edit_permission = result as boolean;});
+    }
+    if ('form' in changes) {
+      this.handleGraphPlugin();
+    }
+  }
+
+  private handleGraphPlugin(){
+    if(this.form && this.form.get('plugins') && 'graph' in this.form.get('plugins').value) { // initially setter gets called with undefined
+      let graph_plugin_element = this.graphPluginRef;
+      if(!this.graphed) {
+        // let file = 'assets/test/cma_404470826rda00790050104ch11503p1.csv';
+        let file = this.findGraphFile();
+        if(!file) {
+          return;
+        }
+        let file_name = file.name;
+        let file_uuid = file.uuid;
+        this.api.fetchFile(file_uuid).subscribe(file_data => {
+          graphCsvBlob(graph_plugin_element.nativeElement, file_data, file_name);
+          this.graphed = true;
+        })
+      }
     }
   }
 
@@ -346,6 +373,9 @@ export class RecordComponent implements OnInit, OnChanges {
           .push(this.convertRecordObjectToForm(related_record, dataset_map[related_record.dataset_uuid], file_upload_progress_map));
       }
     }
+    if(record_object.plugins) {
+      form.addControl("plugins", new FormControl(record_object.plugins))
+    }
     return form;
   }
 
@@ -431,5 +461,18 @@ export class RecordComponent implements OnInit, OnChanges {
       result_plugins.push(new plugin(plugin_options));
     }
     return result_plugins;
+  }
+
+  private findGraphFile() {
+    let graph_file;
+    for(let field of this.fields_form_array?.controls) {
+      if(field.get('file')) {
+        if(field.get('file')?.value.name.endsWith('.csv')) {
+          graph_file = field.get('file')?.value;
+          break;
+        }
+      }
+    }
+    return graph_file;
   }
 }

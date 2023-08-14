@@ -120,7 +120,7 @@ export class FieldComponent implements OnInit, OnChanges {
 
   #defaultPluginOptions(plugin_name: string, plugin_version: number) {
     let plugin = this.pluginsService.getFieldPlugin(plugin_name, plugin_version);
-    if(plugin.instanceOfHasOptions()) {
+    if(!plugin.instanceOfHasOptions()) {
       return null;
     }
     let potential_options = plugin.availableOptions();

@@ -509,11 +509,11 @@ export class DatasetComponent implements OnInit, OnChanges {
   }
 
   addPlugin(name: string, version: number) {
-    this.current_plugins.set(name, version);
+    this.editPlugin(name, version);
   }
 
   editPlugin(name: string, version: number) {
-    this.current_plugins.set(name, version);
+    this.current_plugins.set(name, {version});
   }
 
   removePlugin(name: string) {
@@ -524,10 +524,28 @@ export class DatasetComponent implements OnInit, OnChanges {
     this.add_plugin_modal.dismiss(null, 'cancel');
   }
 
-  confirmAddPluginModal(name: string, event: Event) {
-    let version = (<any>event).detail.value;
+  confirmAddPluginModal(name: string) {
+    let version = this.latestPluginVersion(name);
     this.addPlugin(name, version);
     this.add_plugin_modal.dismiss(null, 'confirm');
+  }
+
+  private latestPluginVersion(plugin_name: string) {
+    let versions = this.all_object_plugins[plugin_name];
+    return versions[versions.length-1];
+  }
+
+  changePluginVersion(name: string, event: Event) {
+    let version = (<any>event).detail.value;
+    this.editPlugin(name, version);
+  }
+
+  getExistingPluginVersionOrLatest(plugin_name: string) {
+    let current_plugin = this.current_plugins.get(plugin_name);
+    if(current_plugin) {
+      return current_plugin.version;
+    }
+    return this.latestPluginVersion(plugin_name);
   }
 
   private async presentAlert(message: string) {
