@@ -8,10 +8,16 @@
   <ion-item lines="inset">
     <ion-label>Description: {{ form.get('description')?.value }}</ion-label>
   </ion-item>
-  <ion-item lines="inset" *ngIf="!is_file">
-    <ion-label>Value:</ion-label>
-    <ion-input formControlName="value" [placeholder]="may_edit ? 'Enter value here...' : ''" [readonly]="!may_edit"></ion-input>
-  </ion-item>
+  <div *ngIf="!is_file">
+    <ion-item lines="inset">
+      <ion-label>Value:</ion-label>
+      <ion-input formControlName="value" [placeholder]="may_edit ? 'Enter value here...' : ''" [readonly]="!may_edit"></ion-input>
+      <ion-note slot="error" *ngIf="form.get('value').hasError('pluginError')">{{ form.get('value').getError('pluginError') }}</ion-note>
+    </ion-item>
+    <ion-item lines="inset" *ngIf="value_after_plugins">
+      <ion-label [innerHTML]="'Preview: ' + value_after_plugins | bypassDomSanitizer"></ion-label>
+    </ion-item>
+  </div>
   <div *ngIf="is_file">
     <ion-item lines="none">File:</ion-item>
     <div class="ion-margin-start">

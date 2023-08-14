@@ -7,7 +7,7 @@ class ViewPluginMap {
     this.keys = Object.keys(this.combined_object);
   }
 
-  get(name: string): number | null {
+  get(name: string): any {
     if(name in this.dataset_map) {
       let value = this.dataset_map[name];
       if(value == 'deleted') {

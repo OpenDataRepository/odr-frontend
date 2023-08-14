@@ -42,13 +42,38 @@ Even if the user doesn't have edit access to the field, they can still edit plug
 
     <div *ngIf="!!uuid">
       <ion-item lines="none">Plugins: </ion-item>
-      <ion-list class="ion-margin">
-        <ion-item *ngFor="let plugin_name of current_plugin_keys">
-          <ion-label>{{plugin_name}} v{{current_plugins.get(plugin_name)}}</ion-label>
-          <!-- TODO: add popover to select version -->
-          <ion-button color="danger" (click)="removePlugin(plugin_name)">Remove</ion-button>
+      <div *ngFor="let plugin_name of current_plugin_keys"
+        class="ion-margin"
+        [ngClass]="{'gray-border': !may_edit, 'border': may_edit}"
+      >
+        <ion-item><ion-label>Name: {{plugin_name}}</ion-label></ion-item>
+        <ion-item lines="inset">
+          <ion-label>Version: </ion-label>
+          <ion-select
+            (ionChange)="changePluginVersion(plugin_name, $event)"
+            [value]="getExistingPluginVersionOrLatest(plugin_name)"
+          >
+            <ion-select-option *ngFor="let version of all_field_plugins[plugin_name]" [value]="version">v{{version}}</ion-select-option>
+          </ion-select>
         </ion-item>
-      </ion-list>
+        <div *ngIf="getPluginOptions(plugin_name)">
+          <ion-item lines="inset">
+            <ion-label>Plugin options:</ion-label>
+          </ion-item>
+          <ion-list class="ion-margin">
+            <ion-item lines="inset" *ngFor="let plugin_option_name of getPluginOptionKeys(plugin_name)" [detail]="false">
+              <ion-label>{{ plugin_option_name }}</ion-label>
+              <ion-select
+                (ionChange)="changePluginOption(plugin_name, plugin_option_name, $event)"
+                [value]="getExistingPluginOption(plugin_name, plugin_option_name)"
+              >
+                <ion-select-option *ngFor="let option of safeGetPluginOptions(plugin_name)[plugin_option_name]" [value]="option">{{option}}</ion-select-option>
+              </ion-select>
+            </ion-item>
+          </ion-list>
+        </div>
+        <ion-item><ion-button color="danger" (click)="removePlugin(plugin_name)">Remove Plugin</ion-button></ion-item>
+      </div>
       <div *ngIf="may_edit">
         <ion-item *ngIf="!!uuid" lines="none">
           <ion-button [attr.id]="'add-plugin-' + template_uuid + '-' + uuid?.value">Add Plugin</ion-button>
@@ -66,18 +91,13 @@ Even if the user doesn't have edit access to the field, they can still edit plug
             <ion-content class="ion-padding">
               <div>
                 <ion-item>
-                  <ion-label><b>Plugins</b></ion-label>
+                  <ion-label><b>Plugins:</b></ion-label>
                 </ion-item>
                 <ion-list>
-                  <ion-item *ngFor="let plugin_name of all_field_plugin_keys" [detail]="false">
+                  <ion-item *ngFor="let plugin_name of all_field_plugin_keys" [detail]="false"
+                    button (click)="confirmAddPluginModal(plugin_name)"
+                  >
                     <ion-label>{{ plugin_name }}</ion-label>
-                    <ion-select
-                      aria-label="Fruit"
-                      placeholder="Select version"
-                      (ionChange)="confirmAddPluginModal(plugin_name, $event)"
-                    >
-                      <ion-select-option *ngFor="let version of all_field_plugins[plugin_name]" [value]="version">v{{version}}</ion-select-option>
-                    </ion-select>
                   </ion-item>
                 </ion-list>
               </div>

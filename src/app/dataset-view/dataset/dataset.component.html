@@ -37,10 +37,19 @@
               <ion-label>Type: {{ f.type }}</ion-label>
             </ion-item>
             <ion-item lines="none">Plugins: </ion-item>
-            <ion-list class="ion-margin">
-              <ion-item *ngFor="let plugin_name of f.plugins.keys">
-                <ion-label>{{plugin_name}} v{{f.plugins.get(plugin_name)}}</ion-label>
-              </ion-item>
+            <ion-list>
+              <div *ngFor="let plugin_name of f.plugins.keys" class="ion-margin border">
+                <ion-item><ion-label>Name: {{plugin_name}}</ion-label></ion-item>
+                <ion-item><ion-label>Version: {{f.plugins.get(plugin_name).version}}</ion-label></ion-item>
+                <div *ngIf="f.plugins.get(plugin_name).options">
+                  <ion-item><ion-label>Options: </ion-label></ion-item>
+                  <ion-list class="ion-margin">
+                    <ion-item lines="inset" *ngFor="let plugin_option_name of objectKeys(f.plugins.get(plugin_name).options)" [detail]="false">
+                      <ion-label>{{ plugin_option_name }} : {{ f.plugins.get(plugin_name).options[plugin_option_name] }}</ion-label>
+                    </ion-item>
+                  </ion-list>
+                </div>
+              </div>
             </ion-list>
           </div>
         </div>

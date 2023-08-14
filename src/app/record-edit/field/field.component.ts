@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, OnInit, Output } from '@angu
 import { FormGroup, FormControl } from '@angular/forms';
 import { ApiService } from 'src/app/api/api.service';
 import { PermissionService } from 'src/app/api/permission.service';
+import { PluginsService } from 'src/app/shared/plugins.service';
 import { v4 as uuidv4 } from 'uuid';
 
 @Component({
@@ -21,10 +22,18 @@ export class FieldComponent implements OnInit, OnChanges {
   remove: EventEmitter<void> = new EventEmitter<void>();
 
   edit_permission = true;
+  value_after_plugins: any = null;
 
-  constructor(private permissionService: PermissionService, private api: ApiService) {}
+  constructor(private api: ApiService, private pluginsService: PluginsService) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.form.get('value').valueChanges.subscribe((new_value: string) => {
+      // Update the second field based on the first field's value
+      if(this.#hasTransformPlugin()) {
+        this.value_after_plugins = this.#pluginsTransformedValue();
+      }
+    });
+  }
 
   ngOnChanges() {
     // TODO: figure out if field should even have it's own permissions. For now, just share the permissions of the record it's on
@@ -32,6 +41,9 @@ export class FieldComponent implements OnInit, OnChanges {
     //   this.permissionService.hasPermission(this.uuid.value, 'edit').subscribe(result => {this.edit_permission = result as boolean;});
     //   // this.permission_checked = true;
     // }
+    if(this.#hasTransformPlugin()) {
+      this.value_after_plugins = this.#pluginsTransformedValue();
+    }
   }
 
   get uuid() { return this.form.get('uuid'); }
@@ -53,6 +65,10 @@ export class FieldComponent implements OnInit, OnChanges {
 
   get file_upload_progress_map() {
     return this.form.get('file_upload_progress_map').value;
+  }
+
+  get plugins() {
+    return this.form.get('plugins').value;
   }
 
   onFileSelected(event: any): void {
@@ -79,6 +95,39 @@ export class FieldComponent implements OnInit, OnChanges {
       a.href = window.URL.createObjectURL(blob);
       a.click();
     });
+  }
+
+  #hasTransformPlugin(): boolean {
+    if(!this.plugins) {
+      return false;
+    }
+    for(let plugin_name in this.plugins) {
+      let plugin_version = this.plugins[plugin_name].version;
+      let plugin = this.pluginsService.getFieldPlugin(plugin_name, plugin_version);
+      if(plugin.instanceOfDataTransformer()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  #pluginsTransformedValue(): any {
+
+    const value = this.form.get('value').value;
+    if(!value) {
+      return null;
+    }
+    // Plugins added by the backend before data is returned
+    let transformed_value = value;
+    for(let plugin_name in this.plugins) {
+      let plugin_version = this.plugins[plugin_name].version;
+      let plugin = this.pluginsService.getFieldPlugin(plugin_name, plugin_version);
+      if(plugin.instanceOfDataTransformer()) {
+        let plugin_instance = new plugin();
+        transformed_value = plugin_instance.transformData(transformed_value);
+      }
+    }
+    return transformed_value;
   }
 
 }

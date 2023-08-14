@@ -1,11 +1,12 @@
 import { HttpEventType } from '@angular/common/http';
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, ViewChild } from '@angular/core';
-import { FormGroup, FormControl, FormArray, FormBuilder, Validators, AbstractControl } from '@angular/forms';
+import { FormGroup, FormControl, FormArray, FormBuilder, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { AlertController, IonModal } from '@ionic/angular';
 import { switchMap, of, from, forkJoin, take, Observable } from 'rxjs';
 import { ApiService } from 'src/app/api/api.service';
 import { PermissionService } from 'src/app/api/permission.service';
 import { RecordService } from 'src/app/api/record.service';
+import { PluginsService } from 'src/app/shared/plugins.service';
 
 @Component({
   selector: 'record-edit',
@@ -35,7 +36,8 @@ export class RecordComponent implements OnInit, OnChanges {
   edit_permission = false;
 
   constructor(private _fb: FormBuilder, private api: ApiService, private recordService: RecordService,
-    private alertController: AlertController, private permissionService: PermissionService) {}
+    private alertController: AlertController, private permissionService: PermissionService,
+    private pluginsService: PluginsService) {}
 
   ngOnInit() {}
 
@@ -314,7 +316,7 @@ export class RecordComponent implements OnInit, OnChanges {
           uuid: new FormControl(field.uuid),
           name: new FormControl(field.name),
           description: new FormControl(field.description),
-          value: new FormControl(field.value ? field.value : "")
+          value: [field.value ? field.value : "", {validators: [this.generateFieldValueValidator(field.plugins)]}]
         });
         if(field.type) {
           new_field.addControl("type", new FormControl(field.type))
@@ -325,6 +327,9 @@ export class RecordComponent implements OnInit, OnChanges {
             name: field.file.name
           }))
           new_field.addControl("file_upload_progress_map", new FormControl(file_upload_progress_map));
+        }
+        if(field.plugins) {
+          new_field.addControl("plugins", new FormControl(field.plugins))
         }
         fields.push(new_field);
       }
@@ -384,4 +389,47 @@ export class RecordComponent implements OnInit, OnChanges {
     await alert.present();
   }
 
+  private generateFieldValueValidator(plugins: any): ValidatorFn {
+    if(!plugins) {
+      return (control: AbstractControl): ValidationErrors | null => {
+        return null;
+      };
+    }
+    plugins = this.fetchPlugins(plugins);
+    let getValidationError = (value: any, plugins: any): string|null => {
+      for(let plugin of plugins) {
+        if(plugin.instanceOfDataValidator()) {
+          let error_string = plugin.validateData(value);
+          if(error_string) {
+            return error_string;
+          }
+        }
+      }
+      return null;
+    }
+    return (control: AbstractControl): ValidationErrors | null => {
+      if(!control.value) {
+        return null;
+      }
+      let error = getValidationError(control.value, plugins);
+      if (error) {
+        return { pluginError: error };
+      }
+      return null; // Return null if validation passes
+    };
+  }
+
+  private fetchPlugins(plugins: any) {
+    if(!plugins) {
+      return [];
+    }
+    let result_plugins = [];
+    for(let plugin_name in plugins) {
+      let plugin_version = plugins[plugin_name].version;
+      let plugin_options = plugins[plugin_name].options;
+      let plugin = this.pluginsService.getFieldPlugin(plugin_name, plugin_version);
+      result_plugins.push(new plugin(plugin_options));
+    }
+    return result_plugins;
+  }
 }

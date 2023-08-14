@@ -36,7 +36,7 @@ export class PluginsService {
     }
   }
 
-  getFieldPluginFunction(name: string, version: number) {
+  getFieldPlugin(name: string, version: number) {
     return field_plugins[name][version];
   }
 }

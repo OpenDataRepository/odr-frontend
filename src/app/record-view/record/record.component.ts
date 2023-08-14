@@ -96,14 +96,18 @@ export class RecordComponent implements OnInit, OnChanges {
       field.value_after_plugins = "";
       return;
     }
+    // Plugins added by the backend before data is returned
     const plugins = field.plugins;
-    let value_after_plugins = value;
+    let transformed_value = value;
     for(let plugin_name in plugins) {
-      let plugin_version = plugins[plugin_name];
-      let pluginFunction = this.pluginsService.getFieldPluginFunction(plugin_name, plugin_version);
-      value_after_plugins = pluginFunction(value_after_plugins);
+      let plugin_version = plugins[plugin_name].version;
+      let plugin = this.pluginsService.getFieldPlugin(plugin_name, plugin_version);
+      if(plugin.instanceOfDataTransformer()) {
+        let plugin_instance = new plugin();
+        transformed_value = plugin_instance.transformData(transformed_value);
+      }
     }
-    field.value_after_plugins = value_after_plugins;
+    field.value_after_plugins = transformed_value;
   }
 
   #applyDatasetPluginsToRecord(record: any) {

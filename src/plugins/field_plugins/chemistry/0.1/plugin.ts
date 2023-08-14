@@ -1,5 +1,14 @@
-export function transformData(str: string|undefined|null) {
-  return applyChemistryFormatting('^', '_', str);
+import { DataTransformer, Plugin } from "src/plugins/interfaces";
+
+
+export class ChemistryPlugin extends Plugin implements DataTransformer {
+  transformData(str: string|undefined|null) {
+    return applyChemistryFormatting('^', '_', str);
+  }
+
+  static override instanceOfDataTransformer(): boolean {
+    return true;
+  }
 }
 
 function applyChemistryFormatting(superscript_delimiter: string, subscript_delimiter: string, str: string|undefined|null) {

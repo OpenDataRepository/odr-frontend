@@ -78,23 +78,121 @@ export class FieldComponent implements OnInit, OnChanges {
   cancelAddPluginModal() {
     this.add_plugin_modal.dismiss(null, 'cancel');
   }
-  confirmAddPluginModal(name: string, event: Event) {
-    let version = (<any>event).detail.value;
-    this.addPlugin(name, version);
+  confirmAddPluginModal(name: string) {
+    let version = this.#latestPluginVersion(name);
+    let options = this.#defaultPluginOptions(name, version);
+    if(options) {
+      this.addPlugin(name, version, options);
+    } else {
+      this.addPlugin(name, version);
+    }
     this.add_plugin_modal.dismiss(null, 'confirm');
   }
 
-  latestPluginVersion(plugin_name: string): number {
-    let versions = this.all_field_plugins[plugin_name] as number[];
+  changePluginVersion(name: string, event: Event) {
+    let version = (<any>event).detail.value;
+    let plugin_options = this.getPluginOptions(name);
+    if(!plugin_options) {
+      plugin_options = this.#defaultPluginOptions(name, version);
+    }
+    if(plugin_options) {
+      this.editPlugin(name, version, plugin_options);
+    } else {
+      this.editPlugin(name, version);
+    }
+  }
+
+  changePluginOption(plugin_name: string, option_name: string, event: Event) {
+    let version = this.getExistingPluginVersionOrLatest(plugin_name);
+    let option_value = (<any>event).detail.value;
+    let plugin_options = this.getPluginOptions(plugin_name);
+    if(!plugin_options) {
+      plugin_options = <Record<string, string[]>> this.#defaultPluginOptions(plugin_name, version);
+    }
+    plugin_options[option_name] = option_value;
+    this.editPlugin(plugin_name, version, plugin_options);
+  }
+
+  #latestPluginVersion(plugin_name: string) {
+    let versions = this.all_field_plugins[plugin_name];
     return versions[versions.length-1];
   }
 
-  addPlugin(name: string, version: number) {
-    this.current_plugins.set(name, version);
+  #defaultPluginOptions(plugin_name: string, plugin_version: number) {
+    let plugin = this.pluginsService.getFieldPlugin(plugin_name, plugin_version);
+    if(plugin.instanceOfHasOptions()) {
+      return null;
+    }
+    let potential_options = plugin.availableOptions();
+    let default_options: any = {};
+    for(let option_key in potential_options) {
+      default_options[option_key] = potential_options[option_key][0];
+    }
+    return default_options;
   }
 
-  editPlugin(name: string, version: number) {
-    this.current_plugins.set(name, version);
+  getExistingPluginVersionOrLatest(plugin_name: string) {
+    let current_plugin = this.current_plugins.get(plugin_name);
+    if(current_plugin) {
+      return current_plugin.version;
+    }
+    return this.#latestPluginVersion(plugin_name);
+  }
+
+  getExistingPluginOption(plugin_name: string, plugin_option_name: string) {
+    let current_plugin = this.current_plugins.get(plugin_name);
+    if(!current_plugin) {
+      throw "Plugin doesn't exist";
+    }
+    return current_plugin.options[plugin_option_name];
+  }
+
+  getPluginOptions(plugin_name: string) {
+    let current_plugin = this.current_plugins.get(plugin_name);
+    if(!current_plugin) {
+      return null;
+    }
+    let plugin_version = current_plugin.version;
+    let plugin = this.pluginsService.getFieldPlugin(plugin_name, plugin_version);
+    if(!plugin) {
+      return null;
+    }
+    if(plugin.instanceOfHasOptions()) {
+      return plugin.availableOptions();
+    } else {
+      return null;
+    }
+  }
+
+  safeGetPluginOptions(plugin_name: string) {
+    let options = this.getPluginOptions(plugin_name);
+    if(options) {
+      return options;
+    } else {
+      return {};
+    }
+  }
+
+  getPluginOptionKeys(plugin_name: string) {
+    const plugin_options = this.getPluginOptions(plugin_name);
+    if(!plugin_options) {
+      return null;
+    }
+    return Object.keys(plugin_options);
+  }
+
+  addPlugin(name: string, version: number, options?: any) {
+    this.editPlugin(name, version, options);
+  }
+
+  editPlugin(name: string, version: number, options?: any) {
+    let value: any = {
+      version
+    };
+    if(options) {
+      value.options = options;
+    }
+    this.current_plugins.set(name, value);
   }
 
   removePlugin(name: string) {

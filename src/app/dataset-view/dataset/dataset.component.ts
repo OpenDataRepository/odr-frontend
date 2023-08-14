@@ -22,6 +22,10 @@ export class DatasetComponent implements OnInit {
     return !!this.dataset?.dataset_updated_at;
   }
 
+  objectKeys(options: any) {
+    return Object.keys(options);
+  }
+
   constructor() { }
 
   ngOnInit() {}

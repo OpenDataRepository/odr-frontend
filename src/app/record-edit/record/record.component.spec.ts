@@ -7,6 +7,7 @@ import { RecordComponent } from './record.component';
 import { of } from 'rxjs';
 import { RouterModule } from '@angular/router';
 import { PermissionService } from 'src/app/api/permission.service';
+import { PluginsService } from 'src/app/shared/plugins.service';
 
 describe('RecordEditComponent', () => {
   let component: RecordComponent;
@@ -16,6 +17,9 @@ describe('RecordEditComponent', () => {
     hasPermission = (uuid: string, permission: string ) => {
       return of(true);
     }
+  }
+
+  class PluginsServiceMock {
   }
 
   const apiService = jasmine.createSpyObj('ApiService', ['updateRecord', 'fetchRecordLatestPersisted']);
@@ -32,7 +36,8 @@ describe('RecordEditComponent', () => {
       providers: [
         FormBuilder,
         { provide: ApiService, useValue: apiService },
-        { provide: PermissionService, useClass: PermissionServiceMock }
+        { provide: PermissionService, useClass: PermissionServiceMock },
+        { provide: PluginsService, useClass: PluginsServiceMock }
       ],
       imports: [
         IonicModule.forRoot(),
