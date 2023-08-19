@@ -41,9 +41,6 @@ export class ApiService {
     );
   }
 
-  // TODO: switch to using an interceptor to add headers: https://angular.io/guide/http#setting-default-headers
-  // Or do something like executeAndTest, so the same code snippet isn't duplicated dozens of times
-
   newDatasetForTemplate(template_uuid: string) {
     return this.reqHeader()
     .pipe(

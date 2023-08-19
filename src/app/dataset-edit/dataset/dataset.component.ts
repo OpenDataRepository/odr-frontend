@@ -107,7 +107,6 @@ export class DatasetComponent implements OnInit, OnChanges {
   linkExistingField(uuid: string) {
     this.fieldService.fetchLatestField(uuid).pipe(
       switchMap((related_field: any) => {
-        // TODO: can a field be linked multiple times?
         if(this.datasetHasField(uuid)) {
           return from(this.presentAlert('Cannot link the chosen field as it is already linked'));
         } else {
@@ -133,9 +132,6 @@ export class DatasetComponent implements OnInit, OnChanges {
   }
 
   addRelatedDataset() {
-    // TODO: creating the template/dataset independently like this will mess with the duplicate functionality
-    // When the time comes, the new dataset/template should be created along with everything else so duplciate works
-
     this.datasetService.newEmptyDatasetAndTemplate().pipe(
       switchMap((related_dataset_object: any) => {
         this.related_datasets_form_array.push(
@@ -144,6 +140,7 @@ export class DatasetComponent implements OnInit, OnChanges {
             template_uuid: related_dataset_object.template_uuid,
             template_id: related_dataset_object.template_id,
             name: new FormControl(null, [Validators.required]),
+            group_uuid: this.form.get('group_uuid').value,
             fields: this._fb.array([]),
             related_datasets: this._fb.array([]),
             template_plugins: {field_plugins: {}, object_plugins: {}},
@@ -307,6 +304,7 @@ export class DatasetComponent implements OnInit, OnChanges {
       template_uuid: form.get('template_uuid')?.value,
       template_id: form.get('template_id')?.value,
       name: form.get('name') ? form.get('name')?.value : "",
+      group_uuid: form.get('group_uuid') ? form.get('group_uuid')?.value: undefined,
       public_date: form.get('public_date') ? form.get('public_date')?.value : undefined,
       fields,
       related_datasets,
@@ -388,6 +386,9 @@ export class DatasetComponent implements OnInit, OnChanges {
       template_plugins: dataset_object.template_plugins ? dataset_object.template_plugins : {field_plugins: {}, object_plugins: {}},
       dataset_plugins: dataset_object.dataset_plugins ? dataset_object.dataset_plugins : {field_plugins: {}, object_plugins: {}}
     })
+    if(dataset_object.group_uuid) {
+      form.addControl('group_uuid', new FormControl(dataset_object.group_uuid));
+    }
     if(dataset_object.public_date) {
       form.addControl('public_date', new FormControl(dataset_object.public_date));
     }

@@ -189,7 +189,6 @@
     </div>
   </div>
 
-  <!-- TODO: add has_edit_permission, and distinguish between parent_disabled and has_edit_permission -->
   <ion-item *ngIf="!is_top_level_dataset && !disabled">
     <ion-button (click)="remove.emit()" color="danger">Remove Dataset</ion-button>
   </ion-item>

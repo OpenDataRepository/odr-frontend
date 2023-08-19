@@ -176,6 +176,9 @@ export class DatasetService {
       template.public_date = combined.public_date;
       dataset.public_date = combined.public_date;
     }
+    if(combined.group_uuid) {
+      dataset.group_uuid = combined.group_uuid;
+    }
     if(combined.related_datasets) {
       for(let child of combined.related_datasets) {
         let separated_child = this.splitTemplateAndDataset(child);
@@ -225,6 +228,7 @@ export class DatasetService {
       template_uuid: template.uuid,
       template_id: template._id,
       name: dataset.name,
+      group_uuid: dataset.group_uuid ? dataset.group_uuid : undefined,
       dataset_updated_at: dataset.updated_at,
       template_updated_at: template.updated_at,
       public_date: template.public_date ? template.public_date : dataset.public_date ? dataset.public_date : undefined,
