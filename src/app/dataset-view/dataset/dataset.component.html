@@ -1,4 +1,4 @@
-<div class="ion-margin border">
+<div class="ion-margin normal-border">
   <ion-item lines="inset">
     <ion-label>uuid: {{ dataset.dataset_uuid }}</ion-label>
     <ion-button *ngIf="public" slot="end" color="success" disabled="true">Public</ion-button>
@@ -20,7 +20,7 @@
     <ion-item lines="none">Fields:</ion-item>
     <div class="ion-margin">
       <div *ngFor="let f of dataset?.fields">
-        <div class="ion-margin border">
+        <div class="ion-margin normal-border">
           <ion-item lines="inset">
             <ion-label>uuid: {{ f.uuid }}</ion-label>
             <ion-button *ngIf="f.public_date" slot="end" color="success" disabled="true">Public</ion-button>
@@ -55,7 +55,7 @@
     </div>
 
     <ion-item lines="none">Plugins: </ion-item>
-    <div *ngFor="let plugin_name of dataset.plugins.keys" class="ion-margin border">
+    <div *ngFor="let plugin_name of dataset.plugins.keys" class="ion-margin normal-border">
       <ion-item><ion-label>Name: {{plugin_name}}</ion-label></ion-item>
       <ion-item><ion-label>Version: {{dataset.plugins.get(plugin_name).version}}</ion-label></ion-item>
     </div>

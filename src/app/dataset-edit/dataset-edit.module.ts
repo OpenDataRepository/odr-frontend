@@ -10,6 +10,8 @@ import { DatasetEditPage } from './dataset-edit.page';
 import { DatasetComponent } from './dataset/dataset.component';
 import { FieldComponent } from './field/field.component';
 import { HeaderModule } from '../header/header.module';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
 @NgModule({
   imports: [
@@ -18,7 +20,9 @@ import { HeaderModule } from '../header/header.module';
     IonicModule,
     DatasetEditPageRoutingModule,
     ReactiveFormsModule,
-    HeaderModule
+    HeaderModule,
+    NgbModule,
+    DragDropModule
   ],
   declarations: [DatasetEditPage, DatasetComponent, FieldComponent]
 })

@@ -30,7 +30,8 @@ export class FieldComponent implements OnInit, OnChanges {
 
   constructor(private permissionService: PermissionService, private pluginsService: PluginsService) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+  }
 
   ngOnChanges() {
     if(!this.disabled && this.uuid) {

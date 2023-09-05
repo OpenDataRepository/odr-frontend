@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { from, of, switchMap } from 'rxjs';
 import { DatasetService } from '../../api/dataset.service';
@@ -8,6 +8,7 @@ import { AlertController, IonModal } from '@ionic/angular';
 import { FieldService } from 'src/app/api/field.service';
 import { EditPluginMap } from 'src/app/shared/plugin-map';
 import { PluginsService } from 'src/app/shared/plugins.service';
+import { CdkDragDrop, CdkDropList, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'dataset-edit',
@@ -35,6 +36,8 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   @ViewChild('add_plugin_modal') add_plugin_modal!: IonModal;
 
+  @ViewChildren(CdkDropList) allDropLists!: QueryList<CdkDropList>;
+
   user_datasets_loaded = false;
   public_datasets_loaded = false;
   user_datasets_to_link: any = [];
@@ -47,16 +50,72 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   edit_permission = false;
 
+  field_uuid_map: any = {};
+
+  field_groups: any[] = [
+    {
+      width: 6,
+      fields: [
+        {
+          uuid: "43a06e4f-50e5-4c20-9b89-211fc68d7ef7",
+          width: 6
+        },
+        {
+          uuid: "8f956f16-9ab7-46ab-bf97-6c03283d424b",
+          width: 6
+        }
+      ]
+    }
+  ];
+
+  ungrouped_fields: any[] = [];
+  connectedFieldDropLists: CdkDropList[] = [];
+
   constructor(private _fb: FormBuilder, private datasetService: DatasetService, private api: ApiService,
     private alertController: AlertController, private permissionService: PermissionService,
-    private fieldService: FieldService, private pluginsService: PluginsService) {}
+    private fieldService: FieldService, private pluginsService: PluginsService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
   }
 
-  ngOnChanges() {
+  ngOnChanges(changes: SimpleChanges) {
     if(!this.disabled && this.uuid) {
       this.permissionService.hasPermission(this.uuid.value, 'edit').subscribe(result => {this.edit_permission = result as boolean;});
+    }
+    if ('form' in changes) {
+
+      let ungrouped_field_uuids = new Set();
+
+      // Build field_uuid->form map
+      this.field_uuid_map = {};
+      for(let field_form of this.fields_form_array?.controls) {
+        let field_uuid = field_form.get('uuid')?.value;
+        this.field_uuid_map[field_uuid] = field_form;
+
+        ungrouped_field_uuids.add(field_uuid);
+      }
+
+      // for each field in each field group, attach form using uuid
+      for(let field_group of this.field_groups) {
+        for(let field of field_group.fields) {
+          field.form = this.getFieldFormByUuid(field.uuid);
+
+          ungrouped_field_uuids.delete(field.uuid);
+        }
+      }
+
+      // assign all ungrouped fields fields to ungrouped_fields
+      for(let field_uuid of ungrouped_field_uuids.entries()) {
+        let actual_field_uuid = field_uuid[0] as string;
+        let field_form = this.field_uuid_map[actual_field_uuid];
+        this.ungrouped_fields.push({uuid: actual_field_uuid, form: field_form, size: 6});
+      }
+
+      // build the connectedFieldDropLists
+      if(this.allDropLists) {
+        this.buildConnectedFieldDropList();
+      }
+
     }
   }
 
@@ -72,12 +131,37 @@ export class DatasetComponent implements OnInit, OnChanges {
     this.fields_form_array.removeAt(index);
   }
 
-  addField() {
-    this.fields_form_array.push(this._fb.group({
+  // TODO: delete this
+  removeFieldByUuid(uuid: string, fields: any[]) {
+    // Remove field from fields entirely
+    for(let [index, field_form] of this.fields_form_array.controls.entries()) {
+      let safe_field_form = field_form as FormGroup;
+      if(safe_field_form.get(uuid)?.value == uuid) {
+        this.fields_form_array.removeAt(index);
+      }
+    }
+    // Remove field from this specific group
+    for(let [index, field_form] of fields.entries()) {
+      let safe_field_form = field_form as FormGroup;
+      if(safe_field_form.get(uuid)?.value == uuid) {
+        this.fields_form_array.removeAt(index);
+      }
+    }
+  }
+
+  addEmptyField(group_fields?: any[]) {
+    let new_field = this._fb.group({
       name: new FormControl(null, [Validators.required]),
       description: new FormControl(null),
       type: new FormControl('none')
-    }));
+    });
+    this.fields_form_array.push(new_field);
+    if(group_fields) {
+      group_fields.push({
+        width: 6,
+        form: new_field
+      });
+    }
   }
 
   loadFieldsAvailableToLink(){
@@ -263,6 +347,10 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   get current_plugin_keys(): string[] {
     return this.current_plugins ? this.current_plugins.keys : [];
+  }
+
+  getFieldFormByUuid(uuid: string): FormGroup {
+    return this.field_uuid_map[uuid];
   }
 
   saveDraft() {
@@ -558,5 +646,37 @@ export class DatasetComponent implements OnInit, OnChanges {
     });
 
     await alert.present();
+  }
+
+  fieldDropAfterDrag(event: CdkDragDrop<string[]>) {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex,
+      );
+    }
+  }
+
+  fieldGroupDropAfterDrag(event: CdkDragDrop<string[]>) {
+    moveItemInArray(this.field_groups, event.previousIndex, event.currentIndex);
+  }
+
+  deleteFieldGroup(index: number) {
+    this.field_groups.splice(index, 1);
+  }
+
+  addFieldGroup() {
+    this.field_groups.push({width: 6, fields: []});
+    this.buildConnectedFieldDropList();
+  }
+
+  private buildConnectedFieldDropList() {
+    this.cdr.detectChanges();
+    const excludedDropListId = 'field_group_droplist';
+    this.connectedFieldDropLists = this.allDropLists.filter(dropList => dropList.id !== excludedDropListId);
   }
 }

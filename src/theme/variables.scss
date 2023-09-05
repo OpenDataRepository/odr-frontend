@@ -235,12 +235,27 @@
   }
 }
 
-.border {
+.normal-border {
   border-color: var(--ion-color-primary);
   border-width: thin;
   border-style: solid;
   border-radius: 3px;
 }
+
+.normal-border-2 {
+  border-color: var(--ion-color-success);
+  border-width: thin;
+  border-style: solid;
+  border-radius: 3px;
+}
+
+.normal-border-3 {
+  border-color: var(--ion-color-warning);
+  border-width: thin;
+  border-style: solid;
+  border-radius: 3px;
+}
+
 
 .invalid-border {
   border-color: var(--ion-color-danger);

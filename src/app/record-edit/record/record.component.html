@@ -1,4 +1,4 @@
-<form class="ion-margin" [ngClass]="{'gray-border': !may_edit, 'border': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}" [formGroup]="form">
+<form class="ion-margin" [ngClass]="{'gray-border': !may_edit, 'normal-border': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}" [formGroup]="form">
 
   <ion-item lines="inset">
     <ion-label>record uuid: {{ uuid?.value }}</ion-label>

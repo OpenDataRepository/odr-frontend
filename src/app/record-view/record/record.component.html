@@ -1,4 +1,4 @@
-<div class="ion-margin border">
+<div class="ion-margin normal-border">
   <ion-item lines="inset">
     <ion-label>record uuid: {{ record.uuid }}</ion-label>
     <ion-button *ngIf="private" slot="end" color="danger" disabled="true">Private</ion-button>
@@ -21,7 +21,7 @@
       <ion-item lines="none">Fields:</ion-item>
       <div class="ion-margin">
         <div *ngFor="let f of record?.fields">
-          <div class="ion-margin border">
+          <div class="ion-margin normal-border">
             <ion-item lines="inset">
               <ion-label>field uuid: {{ f.uuid }}</ion-label>
             </ion-item>
