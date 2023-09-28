@@ -32,6 +32,7 @@
     "@types/file-saver": "^2.0.5",
     "bootstrap": "^5.2.3",
     "file-saver": "^2.0.5",
+    "gridstack": "^9.2.0",
     "ionicons": "^6.0.3",
     "papaparse": "^5.4.1",
     "plotly.js-dist": "^2.24.2",

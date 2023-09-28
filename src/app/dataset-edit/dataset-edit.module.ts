@@ -12,6 +12,7 @@ import { FieldComponent } from './field/field.component';
 import { HeaderModule } from '../header/header.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+import { GridstackModule } from 'gridstack/dist/angular';
 
 @NgModule({
   imports: [
@@ -22,7 +23,8 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
     ReactiveFormsModule,
     HeaderModule,
     NgbModule,
-    DragDropModule
+    DragDropModule,
+    GridstackModule
   ],
   declarations: [DatasetEditPage, DatasetComponent, FieldComponent]
 })

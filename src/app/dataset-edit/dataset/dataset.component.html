@@ -1,6 +1,5 @@
 <div [ngClass]="{'gray-border': !may_edit, 'normal-border': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}">
   <form [formGroup]="form">
-
     <ion-item color="primary">
       <ion-input formControlName="name" placeholder="Enter name here..." [readonly]="!may_edit"></ion-input>
       <ion-note slot="error">Name is required</ion-note>
@@ -10,11 +9,43 @@
         <ion-button color="secondary" (click)="collapse.toggle()">+</ion-button>
       </div>
     </ion-item>
-
     <div #collapse="ngbCollapse" (ngbCollapse)="true">
       <div *ngIf="public || hasViewPermission" #collapse="ngbCollapse" (ngbCollapse)="true">
+        <ion-toolbar>
+          <ion-grid>
+            <ion-row class="ion-text-center">
+              <ion-col>
+                <ion-button expand="block" (click)="newField()">Add Field</ion-button>
+              </ion-col>
+              <ion-col>
+                <ion-button expand="block" (click)="newFieldGroup()">Add Field Group</ion-button>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-toolbar>
+        <ion-grid>
+          <ion-row>
+            <ion-col size="6">
+              <div class="sidebar">
+                <!-- will size to match content -->
+                <div class="grid-stack-item">
+                  <div class="grid-stack-item-content">New field</div>
+                </div>
+                <div class="grid-stack-item">
+                  <div class="grid-stack-item-content">Field Group</div>
+                </div>
+              </div>
+            </ion-col>
+            <ion-col size="6">
+              <div class="trash" id="trash"></div>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+        <gridstack [options]="customOptions">
+          <div empty-content>Add a field or field group to get started!</div>
+        </gridstack>
 
-        <div id="field_group_droplist" cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="fieldGroupDropAfterDrag($event)">
+        <!-- <div id="field_group_droplist" cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="fieldGroupDropAfterDrag($event)">
           <div *ngFor="let g of field_groups; index as field_group_index" cdkDrag>
             <div [ngClass]="{'gray-border': !may_edit, 'normal-border-3': may_edit}">
               <ion-item>
@@ -42,12 +73,6 @@
                 </ion-item>
               </div>
             </div>
-            <!-- <div cdkDragHandle>
-              <svg width="24px" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 2l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z"></path>
-                <path d="M0 0h24v24H0z" fill="none"></path>
-              </svg>
-            </div> -->
           </div>
         </div>
         <ion-item lines="none" *ngIf="may_edit">
@@ -110,7 +135,7 @@
               </ion-content>
             </ng-template>
           </ion-modal>
-        </div>
+        </div> -->
 
         <ion-item lines="none">Plugins: </ion-item>
         <div *ngFor="let plugin_name of current_plugin_keys"

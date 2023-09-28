@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, Renderer2, SimpleChanges, ViewChild, ViewChildren } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { from, of, switchMap } from 'rxjs';
 import { DatasetService } from '../../api/dataset.service';
@@ -9,6 +9,8 @@ import { FieldService } from 'src/app/api/field.service';
 import { EditPluginMap } from 'src/app/shared/plugin-map';
 import { PluginsService } from 'src/app/shared/plugins.service';
 import { CdkDragDrop, CdkDropList, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { GridstackComponent, NgGridStackOptions, NgGridStackWidget, elementCB, gsCreateNgComponents, nodesCB } from 'gridstack/dist/angular';
+import { GridStack, GridStackNode } from 'gridstack';
 
 @Component({
   selector: 'dataset-edit',
@@ -37,6 +39,8 @@ export class DatasetComponent implements OnInit, OnChanges {
   @ViewChild('add_plugin_modal') add_plugin_modal!: IonModal;
 
   @ViewChildren(CdkDropList) allDropLists!: QueryList<CdkDropList>;
+
+  @ViewChild(GridstackComponent) gridComp?: GridstackComponent;
 
   user_datasets_loaded = false;
   public_datasets_loaded = false;
@@ -71,9 +75,34 @@ export class DatasetComponent implements OnInit, OnChanges {
   ungrouped_fields: any[] = [];
   connectedFieldDropLists: CdkDropList[] = [];
 
+  private customBaseOptions: NgGridStackOptions = {
+    cellHeight: 50,
+    margin: 5,
+    minRow: 1, // don't collapse when empty
+    disableOneColumnMode: false,
+    acceptWidgets: true,
+    float: true
+  };
+  private customSubGridOptions: NgGridStackOptions = {
+    column: 'auto',
+    ...this.customBaseOptions
+  }
+  private customChildren: NgGridStackWidget[] = [
+    {x:0, y:0, content: 'regular item'},
+    {x:1, y:1, w:2, h:4, subGridOpts: {children: [{x:0, y:0, w:2, content: 'nested item'}], ...this.customSubGridOptions}},
+  ]
+  public customOptions: NgGridStackOptions = { // main grid options
+    children: this.customChildren,
+    column: 3,
+    subGridOpts: this.customSubGridOptions,
+    removable: '.trash',
+    ...this.customBaseOptions
+  };
+
   constructor(private _fb: FormBuilder, private datasetService: DatasetService, private api: ApiService,
     private alertController: AlertController, private permissionService: PermissionService,
-    private fieldService: FieldService, private pluginsService: PluginsService, private cdr: ChangeDetectorRef) {}
+    private fieldService: FieldService, private pluginsService: PluginsService, private cdr: ChangeDetectorRef,
+    private renderer: Renderer2) {}
 
   ngOnInit() {
   }
@@ -114,6 +143,13 @@ export class DatasetComponent implements OnInit, OnChanges {
       // build the connectedFieldDropLists
       if(this.allDropLists) {
         this.buildConnectedFieldDropList();
+      }
+
+      if(this.gridComp) {
+        GridStack.setupDragIn('.sidebar .grid-stack-item', { appendTo: 'body', helper: 'clone' });
+        setTimeout(() => {
+          this.recursiveAddEventHandlers(this.grid!);
+        }, 10);
       }
 
     }
@@ -679,4 +715,127 @@ export class DatasetComponent implements OnInit, OnChanges {
     const excludedDropListId = 'field_group_droplist';
     this.connectedFieldDropLists = this.allDropLists.filter(dropList => dropList.id !== excludedDropListId);
   }
+
+
+  private get grid() {
+    return this.gridComp?.grid;
+  }
+
+  public newField() {
+    const widgetEl = this.renderer.createElement('div');
+    this.renderer.addClass(widgetEl, 'grid-stack-item');
+
+    const contentEl = this.renderer.createElement('div');
+    this.renderer.addClass(contentEl, 'grid-stack-item-content');
+
+    const buttonEl = this.renderer.createElement('button');
+    this.renderer.listen(buttonEl, 'click', () => {
+      this.removeWidget(widgetEl);
+    });
+    const buttonText = this.renderer.createText('X');
+    this.renderer.appendChild(buttonEl, buttonText);
+    this.renderer.appendChild(contentEl, buttonEl);
+
+    const text = this.renderer.createText('new item');
+    this.renderer.appendChild(contentEl, text);
+
+    this.renderer.appendChild(widgetEl, contentEl);
+    this.grid!.addWidget(widgetEl, {x:0, y: this.gridHeight()});
+  }
+
+  public newFieldGroup(x = 0, y?: number) {
+    if(!y) {
+      y = this.gridHeight();
+    }
+    let new_el = this.grid?.addWidget({x, y, subGridOpts: this.customSubGridOptions});
+    setTimeout(() => {
+      this.addEvents(new_el?.gridstackNode?.subGrid as GridStack);
+    }, 10);
+  }
+
+  public removeWidget(el: any) {
+    el.remove();
+    el.gridstackNode.grid.removeWidget(el, false);
+  }
+
+  private gridHeight() {
+    let height = 0;
+    for(let child of this.grid!.engine.nodes) {
+      let childY = child.y ? child.y : 0;
+      let childH = child.h ? child.h : 0;
+      let childMaxY = childY + childH;
+      if(childMaxY > height) {
+        height = childMaxY;
+      }
+    }
+    return height;
+  }
+
+  public recursiveAddEventHandlers(grid: GridStack) {
+    this.addEvents(grid);
+    for(let node of grid.engine.nodes) {
+      if('subGrid' in node) {
+        this.recursiveAddEventHandlers(node.subGrid!);
+      }
+    }
+  }
+
+  private addEvents(grid: GridStack) {
+    grid.on('added', (event: any, items: any) => {
+      if(items.length == 1) {
+        let el = items[0].el;
+        if(el.innerText == "Field Group") {
+          console.log('item to be removed and replaced with field group');
+          let x = el.gridstackNode.x;
+          let y = el.gridstackNode.y;
+          this.removeWidget(el);
+          this.newFieldGroup(x, y);
+        }
+      }
+    })
+    .on('change', (event: any, items: any) => {
+      let itemOverextension = containerOverextendedNumberOfRows(items);
+      if(itemOverextension > 0) {
+        this.extendItemRows(items[0].grid.parentGridItem, itemOverextension);
+      }
+    })
+    .on('dropped', (event: any, previousNode: any, newNode: any) => {
+      let itemOverextension = itemOverextendingContainerBy(newNode);
+      if(itemOverextension > 0) {
+        this.extendItemRows(newNode.grid!.parentGridItem!, itemOverextension);
+      }
+    })
+    .on('resizestop', (event: any, el: any) => {
+      let n = el.gridstackNode;
+      if(n.subGrid) {
+        let itemOverextension = containerOverextendedNumberOfRows(n.subGrid.engine.nodes);
+        if(itemOverextension > 0) {
+          this.extendItemRows(n, itemOverextension);
+        }
+      }
+    });
+  }
+
+  private extendItemRows(gridItem: GridStackNode, numberOfRows: number) {
+    this.grid!.update(gridItem.el!, {h: gridItem.h! + numberOfRows})
+  }
+
+}
+
+function containerOverextendedNumberOfRows(items: GridStackNode[]) {
+  let extendAmount = 0;
+  for(let item of items) {
+    let itemOverextension = itemOverextendingContainerBy(item);
+    if (itemOverextension > extendAmount) {
+      extendAmount = itemOverextension;
+    }
+  }
+  return extendAmount;
+}
+
+function itemOverextendingContainerBy(item: GridStackNode) {
+  if(!item.grid!.parentGridItem) {
+    return 0;
+  }
+  return item.y! + item.h! - item.grid!.parentGridItem.h!;
 }
