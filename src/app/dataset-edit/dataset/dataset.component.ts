@@ -38,8 +38,6 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   @ViewChild('add_plugin_modal') add_plugin_modal!: IonModal;
 
-  @ViewChildren(CdkDropList) allDropLists!: QueryList<CdkDropList>;
-
   @ViewChild(GridstackComponent) gridComp?: GridstackComponent;
 
   user_datasets_loaded = false;
@@ -56,22 +54,6 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   field_uuid_map: any = {};
 
-  field_groups: any[] = [
-    {
-      width: 6,
-      fields: [
-        {
-          uuid: "43a06e4f-50e5-4c20-9b89-211fc68d7ef7",
-          width: 6
-        },
-        {
-          uuid: "8f956f16-9ab7-46ab-bf97-6c03283d424b",
-          width: 6
-        }
-      ]
-    }
-  ];
-
   ungrouped_fields: any[] = [];
   connectedFieldDropLists: CdkDropList[] = [];
 
@@ -80,11 +62,17 @@ export class DatasetComponent implements OnInit, OnChanges {
     margin: 5,
     minRow: 1, // don't collapse when empty
     disableOneColumnMode: false,
-    acceptWidgets: true,
     float: true
   };
   private customSubGridOptions: NgGridStackOptions = {
     column: 'auto',
+    acceptWidgets: (element: Element) => {
+      let el = element as any;
+      if('subGrid' in el.gridstackNode || el.innerText == "Field Group") {
+        return false;
+      }
+      return true;
+    },
     ...this.customBaseOptions
   }
   private customChildren: NgGridStackWidget[] = [
@@ -96,6 +84,7 @@ export class DatasetComponent implements OnInit, OnChanges {
     column: 3,
     subGridOpts: this.customSubGridOptions,
     removable: '.trash',
+    acceptWidgets: true,
     ...this.customBaseOptions
   };
 
@@ -113,44 +102,23 @@ export class DatasetComponent implements OnInit, OnChanges {
     }
     if ('form' in changes) {
 
-      let ungrouped_field_uuids = new Set();
-
       // Build field_uuid->form map
       this.field_uuid_map = {};
       for(let field_form of this.fields_form_array?.controls) {
         let field_uuid = field_form.get('uuid')?.value;
         this.field_uuid_map[field_uuid] = field_form;
-
-        ungrouped_field_uuids.add(field_uuid);
       }
 
-      // for each field in each field group, attach form using uuid
-      for(let field_group of this.field_groups) {
-        for(let field of field_group.fields) {
-          field.form = this.getFieldFormByUuid(field.uuid);
+      // TODO:
+      // 1. Loading the gridstack layout
+      // 2. Adding fields not in the gridstack layout to the bottom of the gridstack
 
-          ungrouped_field_uuids.delete(field.uuid);
-        }
-      }
-
-      // assign all ungrouped fields fields to ungrouped_fields
-      for(let field_uuid of ungrouped_field_uuids.entries()) {
-        let actual_field_uuid = field_uuid[0] as string;
-        let field_form = this.field_uuid_map[actual_field_uuid];
-        this.ungrouped_fields.push({uuid: actual_field_uuid, form: field_form, size: 6});
-      }
-
-      // build the connectedFieldDropLists
-      if(this.allDropLists) {
-        this.buildConnectedFieldDropList();
-      }
-
-      if(this.gridComp) {
-        GridStack.setupDragIn('.sidebar .grid-stack-item', { appendTo: 'body', helper: 'clone' });
-        setTimeout(() => {
+      setTimeout(() => {
+        if(this.gridComp) {
+          GridStack.setupDragIn('.sidebar .grid-stack-item', { appendTo: 'body', helper: 'clone' });
           this.recursiveAddEventHandlers(this.grid!);
-        }, 10);
-      }
+        }
+      }, 10);
 
     }
   }
@@ -697,26 +665,6 @@ export class DatasetComponent implements OnInit, OnChanges {
     }
   }
 
-  fieldGroupDropAfterDrag(event: CdkDragDrop<string[]>) {
-    moveItemInArray(this.field_groups, event.previousIndex, event.currentIndex);
-  }
-
-  deleteFieldGroup(index: number) {
-    this.field_groups.splice(index, 1);
-  }
-
-  addFieldGroup() {
-    this.field_groups.push({width: 6, fields: []});
-    this.buildConnectedFieldDropList();
-  }
-
-  private buildConnectedFieldDropList() {
-    this.cdr.detectChanges();
-    const excludedDropListId = 'field_group_droplist';
-    this.connectedFieldDropLists = this.allDropLists.filter(dropList => dropList.id !== excludedDropListId);
-  }
-
-
   private get grid() {
     return this.gridComp?.grid;
   }
@@ -743,11 +691,11 @@ export class DatasetComponent implements OnInit, OnChanges {
     this.grid!.addWidget(widgetEl, {x:0, y: this.gridHeight()});
   }
 
-  public newFieldGroup(x = 0, y?: number) {
+  public newFieldGroup(x = 0, y?: number, grid=this.grid) {
     if(!y) {
       y = this.gridHeight();
     }
-    let new_el = this.grid?.addWidget({x, y, subGridOpts: this.customSubGridOptions});
+    let new_el = grid!.addWidget({x, y, subGridOpts: this.customSubGridOptions});
     setTimeout(() => {
       this.addEvents(new_el?.gridstackNode?.subGrid as GridStack);
     }, 10);
@@ -785,11 +733,10 @@ export class DatasetComponent implements OnInit, OnChanges {
       if(items.length == 1) {
         let el = items[0].el;
         if(el.innerText == "Field Group") {
-          console.log('item to be removed and replaced with field group');
           let x = el.gridstackNode.x;
           let y = el.gridstackNode.y;
           this.removeWidget(el);
-          this.newFieldGroup(x, y);
+          this.newFieldGroup(x, y, items[0].grid);
         }
       }
     })
