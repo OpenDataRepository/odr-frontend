@@ -1,8 +1,7 @@
 <div [ngClass]="{'gray-border': !may_edit, 'normal-border': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}">
   <form [formGroup]="form">
     <ion-item color="primary">
-      <ion-input formControlName="name" placeholder="Enter name here..." [readonly]="!may_edit"></ion-input>
-      <ion-note slot="error">Name is required</ion-note>
+      <ion-input formControlName="name" placeholder="Enter name here..." [readonly]="!may_edit" errorText="Name is required"></ion-input>
       <div slot="end">
         <ion-button *ngIf="public_date" slot="end" color="success" (click)="makePrivate()" [disabled]="!may_edit">Public</ion-button>
         <ion-button *ngIf="!public_date" slot="end" color="danger" (click)="makePublic()" [disabled]="!may_edit">Private</ion-button>

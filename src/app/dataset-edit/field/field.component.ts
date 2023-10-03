@@ -24,7 +24,7 @@ export class FieldComponent implements OnInit, OnChanges {
   @Output()
   remove: EventEmitter<void> = new EventEmitter<void>();
 
-  @ViewChild(IonModal) add_plugin_modal!: IonModal;
+  @ViewChild('add_plugin_modal') add_plugin_modal!: IonModal;
 
   edit_permission = false;
 
@@ -76,9 +76,6 @@ export class FieldComponent implements OnInit, OnChanges {
     this.form.removeControl('public_date');
   }
 
-  cancelAddPluginModal() {
-    this.add_plugin_modal.dismiss(null, 'cancel');
-  }
   confirmAddPluginModal(name: string) {
     let version = this.#latestPluginVersion(name);
     let options = this.#defaultPluginOptions(name, version);

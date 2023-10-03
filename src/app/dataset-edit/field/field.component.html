@@ -36,14 +36,22 @@ Even if the user doesn't have edit access to the field, they can still edit plug
           <div *ngIf="!uuid || public_date || updated_at">
 
             <ion-item lines="inset" [style.--highlight-height]="may_edit ? '2px' : '0px'">
-              <ion-label>Name:</ion-label>
-              <ion-input formControlName="name" [placeholder]="may_edit ? 'Enter name here...' : ''" [readonly]="!may_edit"></ion-input>
-              <ion-note slot="error">Name is required</ion-note>
+              <ion-input
+                label="Name:"
+                formControlName="name"
+                [placeholder]="may_edit ? 'Enter name here...' : ''"
+                [readonly]="!may_edit"
+                errorText="Name is required">
+              </ion-input>
             </ion-item>
 
             <ion-item lines="inset" [style.--highlight-height]="may_edit ? '2px' : '0px'">
-              <ion-label>Description:</ion-label>
-              <ion-input formControlName="description" [placeholder]="may_edit ? 'Enter name here...' : ''" [readonly]="!may_edit"></ion-input>
+              <ion-input
+                label="Description:"
+                formControlName="description"
+                [placeholder]="may_edit ? 'Enter description here...' : ''"
+                [readonly]="!may_edit">
+              </ion-input>
             </ion-item>
 
             <div *ngIf="may_edit">
@@ -64,8 +72,8 @@ Even if the user doesn't have edit access to the field, they can still edit plug
               >
                 <ion-item><ion-label>Name: {{plugin_name}}</ion-label></ion-item>
                 <ion-item lines="inset">
-                  <ion-label>Version: </ion-label>
                   <ion-select
+                    label="Version: "
                     (ionChange)="changePluginVersion(plugin_name, $event)"
                     [value]="getExistingPluginVersionOrLatest(plugin_name)"
                   >
@@ -90,8 +98,8 @@ Even if the user doesn't have edit access to the field, they can still edit plug
                 </div>
                 <ion-item><ion-button color="danger" (click)="removePlugin(plugin_name)">Remove Plugin</ion-button></ion-item>
               </div>
-              <div *ngIf="may_edit">
-                <ion-item *ngIf="!!uuid" lines="none">
+              <div *ngIf="may_edit && !!uuid">
+                <ion-item lines="none">
                   <ion-button [attr.id]="'add-plugin-' + template_uuid + '-' + uuid?.value">Add Plugin</ion-button>
                 </ion-item>
                 <ion-modal #add_plugin_modal [attr.trigger]="'add-plugin-' + template_uuid + '-' + uuid?.value">
@@ -99,7 +107,7 @@ Even if the user doesn't have edit access to the field, they can still edit plug
                     <ion-header>
                       <ion-toolbar>
                         <ion-buttons slot="start">
-                          <ion-button (click)="cancelAddPluginModal()">Cancel</ion-button>
+                          <ion-button (click)="add_plugin_modal.dismiss()">Cancel</ion-button>
                         </ion-buttons>
                         <ion-title>Select a plugin to add</ion-title>
                       </ion-toolbar>
