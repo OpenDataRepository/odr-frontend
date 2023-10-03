@@ -41,7 +41,12 @@
             </ion-col>
           </ion-row>
         </ion-grid>
-        <gridstack [options]="customOptions">
+        <app-field
+          [form]="fields_form_array.controls[0]"
+          [disabled]="!may_edit"
+          [template_uuid]="template_uuid?.value">
+        </app-field>
+        <gridstack [options]="defaultTopGridOptions">
           <div empty-content>Add a field or field group to get started!</div>
         </gridstack>
 

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, Renderer2, SimpleChanges, ViewChild, ViewChildren } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, Renderer2, SimpleChanges, ViewChild, ViewChildren, ViewContainerRef } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { from, of, switchMap } from 'rxjs';
 import { DatasetService } from '../../api/dataset.service';
@@ -11,6 +11,7 @@ import { PluginsService } from 'src/app/shared/plugins.service';
 import { CdkDragDrop, CdkDropList, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { GridstackComponent, NgGridStackOptions, NgGridStackWidget, elementCB, gsCreateNgComponents, nodesCB } from 'gridstack/dist/angular';
 import { GridStack, GridStackNode } from 'gridstack';
+import { FieldComponent } from '../field/field.component';
 
 @Component({
   selector: 'dataset-edit',
@@ -54,17 +55,14 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   field_uuid_map: any = {};
 
-  ungrouped_fields: any[] = [];
-  connectedFieldDropLists: CdkDropList[] = [];
-
-  private customBaseOptions: NgGridStackOptions = {
-    cellHeight: 50,
+  private defaultBaseGridOptions: NgGridStackOptions = {
+    cellHeight: 80,
     margin: 5,
     minRow: 1, // don't collapse when empty
     disableOneColumnMode: false,
     float: true
   };
-  private customSubGridOptions: NgGridStackOptions = {
+  private defaultSubGridOptions: NgGridStackOptions = {
     column: 'auto',
     acceptWidgets: (element: Element) => {
       let el = element as any;
@@ -73,53 +71,60 @@ export class DatasetComponent implements OnInit, OnChanges {
       }
       return true;
     },
-    ...this.customBaseOptions
+    ...this.defaultBaseGridOptions
   }
-  private customChildren: NgGridStackWidget[] = [
-    {x:0, y:0, content: 'regular item'},
-    {x:1, y:1, w:2, h:4, subGridOpts: {children: [{x:0, y:0, w:2, content: 'nested item'}], ...this.customSubGridOptions}},
-  ]
-  public customOptions: NgGridStackOptions = { // main grid options
-    children: this.customChildren,
+  public defaultTopGridOptions : NgGridStackOptions = { // main grid options
     column: 3,
-    subGridOpts: this.customSubGridOptions,
+    subGridOpts: this.defaultSubGridOptions,
     removable: '.trash',
     acceptWidgets: true,
-    ...this.customBaseOptions
+    ...this.defaultBaseGridOptions
   };
 
   constructor(private _fb: FormBuilder, private datasetService: DatasetService, private api: ApiService,
     private alertController: AlertController, private permissionService: PermissionService,
     private fieldService: FieldService, private pluginsService: PluginsService, private cdr: ChangeDetectorRef,
-    private renderer: Renderer2) {}
+    private renderer: Renderer2, private viewContainerRef: ViewContainerRef) {}
 
   ngOnInit() {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if(!this.disabled && this.uuid) {
-      this.permissionService.hasPermission(this.uuid.value, 'edit').subscribe(result => {this.edit_permission = result as boolean;});
-    }
-    if ('form' in changes) {
 
+    if('form' in changes) {
       // Build field_uuid->form map
       this.field_uuid_map = {};
       for(let field_form of this.fields_form_array?.controls) {
         let field_uuid = field_form.get('uuid')?.value;
         this.field_uuid_map[field_uuid] = field_form;
       }
+    }
 
-      // TODO:
+    let populateGridStack = () => {
+
       // 1. Loading the gridstack layout
-      // 2. Adding fields not in the gridstack layout to the bottom of the gridstack
+      // 2. Change hard-coded data to match one or two actual fields
+      // TODO:
+      // 3. Change look of fields and field groups to be as desired
+      // 4. Adding fields not in the gridstack layout to the bottom of the gridstack
 
       setTimeout(() => {
         if(this.gridComp) {
+          GridStack.addGrid(this.gridComp.el);
+          this.loadGridstackItems();
           GridStack.setupDragIn('.sidebar .grid-stack-item', { appendTo: 'body', helper: 'clone' });
           this.recursiveAddEventHandlers(this.grid!);
         }
       }, 10);
+    }
 
+    if(!this.disabled && this.uuid) {
+      this.permissionService.hasPermission(this.uuid.value, 'edit').subscribe(result => {
+        this.edit_permission = result as boolean;
+        populateGridStack();
+      });
+    } else {
+      populateGridStack();
     }
   }
 
@@ -135,22 +140,16 @@ export class DatasetComponent implements OnInit, OnChanges {
     this.fields_form_array.removeAt(index);
   }
 
-  // TODO: delete this
-  removeFieldByUuid(uuid: string, fields: any[]) {
-    // Remove field from fields entirely
+  removeFieldByUuid(uuid: string) {
+    // Remove field data
     for(let [index, field_form] of this.fields_form_array.controls.entries()) {
       let safe_field_form = field_form as FormGroup;
-      if(safe_field_form.get(uuid)?.value == uuid) {
+      if(safe_field_form.get("uuid")?.value == uuid) {
         this.fields_form_array.removeAt(index);
       }
     }
-    // Remove field from this specific group
-    for(let [index, field_form] of fields.entries()) {
-      let safe_field_form = field_form as FormGroup;
-      if(safe_field_form.get(uuid)?.value == uuid) {
-        this.fields_form_array.removeAt(index);
-      }
-    }
+
+    // TODO: remove field grid-item from gridstack
   }
 
   addEmptyField(group_fields?: any[]) {
@@ -695,7 +694,7 @@ export class DatasetComponent implements OnInit, OnChanges {
     if(!y) {
       y = this.gridHeight();
     }
-    let new_el = grid!.addWidget({x, y, subGridOpts: this.customSubGridOptions});
+    let new_el = grid!.addWidget({x, y, subGridOpts: this.defaultSubGridOptions});
     setTimeout(() => {
       this.addEvents(new_el?.gridstackNode?.subGrid as GridStack);
     }, 10);
@@ -765,6 +764,65 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   private extendItemRows(gridItem: GridStackNode, numberOfRows: number) {
     this.grid!.update(gridItem.el!, {h: gridItem.h! + numberOfRows})
+  }
+
+  private loadGridstackItems() {
+    this.grid?.batchUpdate();
+    // let hard_coded_children: NgGridStackWidget[] = [
+    //   {x:0, y:0, content: this.appFieldSelectorFromUUID("8f956f16-9ab7-46ab-bf97-6c03283d424b")},
+    //   {x:1, y:1, w:2, h:4, subGridOpts: {children: [{x:0, y:0, w:2, input: {uuid: "43a06e4f-50e5-4c20-9b89-211fc68d7ef7"}}], ...this.defaultSubGridOptions}},
+    // ]
+    this.grid?.addWidget(`<h1>just html</h1>`, {x: 0, y: 0})
+    let real_component = this.appFieldSelectorFromUUID("8f956f16-9ab7-46ab-bf97-6c03283d424b");
+    this.grid?.addWidget(real_component, {x: 0, y: 1})
+
+    this.grid?.commit();
+  }
+
+  private appFieldSelectorFromUUID(uuid: string) {
+
+    const component = this.viewContainerRef.createComponent(FieldComponent);
+    component.setInput('form', this.fieldFormFromUuid(uuid));
+    component.setInput('disabled', !this.may_edit);
+    component.setInput('template_uuid', this.template_uuid?.value);
+
+    return component.location.nativeElement;
+
+    // return `<app-field
+    //   [form]="${this.fieldFormFromUuid(uuid)}"
+    //   (remove)="${this.removeFieldByUuid(uuid)}"
+    //   [disabled]="${!this.may_edit}"
+    //   [template_uuid]="${this.template_uuid?.value}">
+    // </app-field>`;
+
+    // let field_form = this.fieldFormFromUuid(uuid);
+
+    // let attr_id = 'edit-field-' + this.uuid + '-' + uuid;
+
+    // return `<div class="normal-border-2">
+    //   <ion-item>
+    //     <ion-label>
+    //       <p><span style="color: blue;">${field_form?.get("name")?.value} (${uuid})</span></p>
+    //       <p>Value Preview...</p>
+    //     </ion-label>
+    //     <div slot="end" style="display: grid;">
+    //       <ion-button (click)="console.log('edit clicked')">Edit Field</ion-button>
+    //       <ion-button (click)="console.log('remove clicked')" color="danger">Remove Field</ion-button>
+    //     </div>
+    //   </ion-item>
+    // </div>`
+  }
+
+  private fieldFormFromUuid(uuid: string) {
+    return this.field_uuid_map[uuid];
+
+    // for(let [index, field_form] of this.fields_form_array.controls.entries()) {
+    //   let safe_field_form = field_form as FormGroup;
+    //   if(safe_field_form.get("uuid")?.value == uuid) {
+    //     return field_form;
+    //   }
+    // }
+    // return undefined;
   }
 
 }
