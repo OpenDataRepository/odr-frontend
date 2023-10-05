@@ -14,7 +14,7 @@
           <ion-grid>
             <ion-row class="ion-text-center">
               <ion-col>
-                <ion-button expand="block" (click)="newField()">Add Field</ion-button>
+                <ion-button expand="block" (click)="addEmptyField()">Add Field</ion-button>
               </ion-col>
               <ion-col>
                 <ion-button expand="block" (click)="newFieldGroup()">Add Field Group</ion-button>
@@ -40,59 +40,13 @@
             </ion-col>
           </ion-row>
         </ion-grid>
-        <app-field
-          [form]="fields_form_array.controls[0]"
-          [disabled]="!may_edit"
-          [template_uuid]="template_uuid?.value">
-        </app-field>
-        <gridstack [options]="defaultTopGridOptions">
-          <div empty-content>Add a field or field group to get started!</div>
-        </gridstack>
-
-        <!-- <div id="field_group_droplist" cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="fieldGroupDropAfterDrag($event)">
-          <div *ngFor="let g of field_groups; index as field_group_index" cdkDrag>
-            <div [ngClass]="{'gray-border': !may_edit, 'normal-border-3': may_edit}">
-              <ion-item>
-                <ion-button slot="end" color="warning" (click)="collapse.toggle()">+</ion-button>
-              </ion-item>
-              <div #collapse="ngbCollapse" (ngbCollapse)="true">
-                <div cdkDropList
-                  [cdkDropListData]="g.fields"
-                  (cdkDropListDropped)="fieldDropAfterDrag($event)"
-                  [cdkDropListConnectedTo]="connectedFieldDropLists">
-                  <div *ngFor="let field of g.fields; index as field_index" cdkDrag>
-                    <app-field
-                        [form]="field.form"
-                        (remove)="g.fields.splice(field_index, 1)"
-                        [disabled]="!may_edit"
-                        [template_uuid]="template_uuid?.value">
-                    </app-field>
-                  </div>
-                </div>
-                <ion-item lines="none" *ngIf="may_edit">
-                  <ion-button color="success" (click)="addEmptyField(g.fields)">New Field</ion-button>
-                </ion-item>
-                <ion-item *ngIf="!disabled">
-                  <ion-button (click)="deleteFieldGroup(field_group_index)" color="danger">Delete Field Group</ion-button>
-                </ion-item>
-              </div>
-            </div>
-          </div>
+        <div class="ion-padding">
+          <gridstack [options]="defaultTopGridOptions">
+            <div empty-content>Add a field or field group to get started!</div>
+          </gridstack>
         </div>
-        <ion-item lines="none" *ngIf="may_edit">
-          <ion-button color="warning" (click)="addFieldGroup()">New Field Group</ion-button>
-        </ion-item>
 
-        <div cdkDropList [cdkDropListData]="ungrouped_fields" (cdkDropListDropped)="fieldDropAfterDrag($event)" [cdkDropListConnectedTo]="connectedFieldDropLists">
-          <div *ngFor="let f of ungrouped_fields; index as field_index" cdkDrag>
-            <app-field
-                [form]="f.form"
-                (remove)="ungrouped_fields.splice(field_index, 1)"
-                [disabled]="!may_edit"
-                [template_uuid]="template_uuid?.value">
-            </app-field>
-          </div>
-        </div>
+        <!--
         <div *ngIf="may_edit">
           <ion-item lines="none">
             <ion-button color="success" (click)="addEmptyField(ungrouped_fields)">New Field</ion-button>
@@ -139,7 +93,8 @@
               </ion-content>
             </ng-template>
           </ion-modal>
-        </div> -->
+        </div>
+        -->
 
         <ion-item lines="none">Plugins: </ion-item>
         <div *ngFor="let plugin_name of current_plugin_keys"

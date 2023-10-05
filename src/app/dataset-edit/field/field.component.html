@@ -2,15 +2,18 @@
 Even if the user doesn't have edit access to the field, they can still edit plugins if they have edit access to the template. -->
 
 <!-- This is the preview of how it will will on the record, and the default of how it appears unless the user selects edit -->
-<div [ngClass]="{'gray-border': !may_edit, 'normal-border-2': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}">
-  <ion-item>
+<div
+  style="width: 100%; height: 100%; background-color: white;"
+  [ngClass]="{'gray-border': !may_edit, 'normal-border-2': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}">
+  <ion-item lines="none">
     <ion-label>
-      <p><span style="color: blue;">{{ name?.value }} ({{ uuid?.value }})</span></p>
+      <p><span style="color: blue;">{{ name?.value?.length > 0 ? name?.value : "no name yet" }}</span></p>
+      <!-- <p>{{ description?.value.length > 0 ? description?.value : "no description yet" }}</p> -->
       <p>Value Preview...</p>
     </ion-label>
-    <div slot="end" *ngIf="!disabled" style="display: grid;">
-      <ion-button [attr.id]="'edit-field-' + template_uuid + '-' + uuid?.value" [disabled]="!may_edit">Edit Field</ion-button>
-      <ion-button (click)="remove.emit()" color="danger">Remove Field</ion-button>
+    <div slot="end" *ngIf="!disabled" style="display: grid; margin-inline-start: 0px;">
+      <ion-button [attr.id]="'edit-field-' + template_uuid + '-' + uuid?.value" [disabled]="!may_edit"><ion-icon name="pencil-outline"></ion-icon></ion-button>
+      <ion-button (click)="remove.emit()" color="danger"><ion-icon name="trash-outline"></ion-icon></ion-button>
     </div>
   </ion-item>
 </div>

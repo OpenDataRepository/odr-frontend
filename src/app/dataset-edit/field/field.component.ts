@@ -42,6 +42,8 @@ export class FieldComponent implements OnInit, OnChanges {
 
   get name() { return this.form.get('name'); }
 
+  get description() { return this.form.get('description'); }
+
   get uuid() { return this.form.get('uuid'); }
 
   get public_date() { return this.form.get('public_date'); }
