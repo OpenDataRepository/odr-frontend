@@ -151,7 +151,7 @@
         <div formArrayName="related_datasets">
           <div *ngFor="let f of related_datasets_form_array?.controls; index as i">
             <dataset-edit
-                [form]="f"
+                [form]="castToFormGroup(f)"
                 (remove)="deleteRelatedDataset(i)"
                 [disabled]="!may_edit">
             </dataset-edit>

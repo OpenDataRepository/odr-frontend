@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, ViewContainerRef } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { from, of, switchMap } from 'rxjs';
 import { DatasetService } from '../../api/dataset.service';
 import { PermissionService } from '../../api/permission.service';
@@ -23,7 +23,7 @@ export class DatasetComponent implements OnInit, OnChanges {
   is_top_level_dataset: boolean = false;
 
   @Input()
-  form: FormGroup|any = new FormGroup({name: new FormControl(), fields: new FormArray([]),
+  form: FormGroup = new FormGroup({name: new FormControl(), fields: new FormArray([]),
     related_datasets: new FormArray([])});
 
   @Input()
@@ -102,10 +102,10 @@ export class DatasetComponent implements OnInit, OnChanges {
     let setUpGridStack = () => {
       setTimeout(() => {
         if(this.gridComp) {
-          GridStack.addGrid(this.gridComp.el);
           this.loadGridstackItems();
           GridStack.setupDragIn('.sidebar .grid-stack-item', { appendTo: 'body', helper: 'clone' });
           this.recursiveAddEventHandlers(this.grid!);
+          this.form.addControl('grid', new FormControl(this.gridComp.grid));
         }
       }, 10);
     }
@@ -138,8 +138,8 @@ export class DatasetComponent implements OnInit, OnChanges {
     }
   }
 
-  addEmptyField(x = 0, y?: number, grid = this.grid) {
-    if(!y) {
+  addEmptyField(x = 0, y = -1, grid = this.grid) {
+    if(y < 0) {
       y = this.gridHeight();
     }
     let new_field = this._fb.group({
@@ -212,7 +212,7 @@ export class DatasetComponent implements OnInit, OnChanges {
             template_uuid: related_dataset_object.template_uuid,
             template_id: related_dataset_object.template_id,
             name: new FormControl(null, [Validators.required]),
-            group_uuid: this.form.get('group_uuid').value,
+            group_uuid: this.form.get('group_uuid')?.value,
             fields: this._fb.array([]),
             related_datasets: this._fb.array([]),
             template_plugins: {field_plugins: {}, object_plugins: {}},
@@ -255,7 +255,7 @@ export class DatasetComponent implements OnInit, OnChanges {
       switchMap((related_dataset_object: any) => {
         if(this.datasetHasChild(uuid)) {
           return from(this.presentAlert('Cannot link the chosen dataset as it is already linked'));
-        }else if(DatasetComponent.hasCircularDependency(related_dataset_object, this.uuid.value)) {
+        }else if(DatasetComponent.hasCircularDependency(related_dataset_object, this.uuid?.value)) {
           return from(this.presentAlert('Cannot link the chosen dataset as it would cause a circular dependency'));
         } else {
           this.related_datasets_form_array.push(this.convertDatasetObjectToForm(related_dataset_object));
@@ -341,11 +341,15 @@ export class DatasetComponent implements OnInit, OnChanges {
     return this.field_uuid_map[uuid];
   }
 
+  castToFormGroup(f: AbstractControl) {
+    return f as FormGroup;
+  }
+
   saveDraft() {
     let dataset_object = this.convertFormToDatasetObject(this.form as FormGroup);
     return this.datasetService.updateDatasetAndTemplate(dataset_object).pipe(
       switchMap(() => {
-        return this.datasetService.fetchLatestDatasetAndTemplate(this.uuid.value);
+        return this.datasetService.fetchLatestDatasetAndTemplate(this.uuid?.value);
       }),
       switchMap((updated_dataset_object) => {
           let new_form = this.convertDatasetObjectToForm(updated_dataset_object);
@@ -375,6 +379,8 @@ export class DatasetComponent implements OnInit, OnChanges {
     for(let related_dataset_form of (form.get("related_datasets") as FormArray).controls) {
       related_datasets.push(this.convertFormToDatasetObject(related_dataset_form as FormGroup));
     }
+    let view_settings = {fields_grid: this.persistGrid(form.get('grid')?.value)};
+
     let dataset_object: Record<string, any> = {
       dataset_uuid: form.get('dataset_uuid')?.value,
       template_uuid: form.get('template_uuid')?.value,
@@ -384,6 +390,7 @@ export class DatasetComponent implements OnInit, OnChanges {
       public_date: form.get('public_date') ? form.get('public_date')?.value : undefined,
       fields,
       related_datasets,
+      view_settings
     };
     this.addPluginsFromFormToDatasetObject(form, dataset_object);
     return dataset_object;
@@ -483,6 +490,9 @@ export class DatasetComponent implements OnInit, OnChanges {
       }
     }
     this.addPluginsToForm(form);
+    if(dataset_object.view_settings) {
+      form.addControl('view_settings', new FormControl(dataset_object.view_settings));
+    }
     return form;
   }
 
@@ -640,8 +650,8 @@ export class DatasetComponent implements OnInit, OnChanges {
     return this.gridComp?.grid;
   }
 
-  public newFieldGroup(x = 0, y?: number, grid=this.grid) {
-    if(!y) {
+  public newFieldGroup(x = 0, y = -1, grid=this.grid) {
+    if(y < 0) {
       y = this.gridHeight();
     }
     let new_el = grid!.addWidget({x, y, subGridOpts: this.defaultSubGridOptions});
@@ -679,6 +689,7 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   private addEvents(grid: GridStack) {
     grid.on('added', (event: any, items: any) => {
+      // TODO: add test cases for this if possible
       if(items.length == 1) {
         let el = items[0].el;
         let x = el.gridstackNode.x;
@@ -686,7 +697,7 @@ export class DatasetComponent implements OnInit, OnChanges {
         if(el.innerText == "Field Group") {
           this.removeWidgetFromGrid(el);
           this.newFieldGroup(x, y, items[0].grid);
-        } else {
+        } else if (el.innerText == 'New field') {
           this.removeWidgetFromGrid(el);
           this.addEmptyField(x, y, items[0].grid);
         }
@@ -728,24 +739,27 @@ export class DatasetComponent implements OnInit, OnChanges {
   }
 
   private loadGridstackItems() {
+    this.grid?.removeAll();
+
     this.grid?.batchUpdate();
 
-    let view_settings = this.form.get('view_settings')?.value;
+    let view_settings = this.form.contains('view_settings') ? this.form.get('view_settings')?.value : {};
+    let fields_grid = view_settings.fields_grid;
     let field_uuids = Object.keys(this.field_uuid_map);
     let field_uuids_not_in_grid = new Set(field_uuids);
 
-    if(view_settings) {
-      for(let child of view_settings.children) {
-        if(child.subGridOpts) {
+    if(fields_grid) {
+      for(let child of fields_grid.children) {
+        if(child.children) {
           let subGrid = this.grid?.addWidget({x: child.x, y: child.y, w: child.w, h: child.h, subGridOpts: this.defaultSubGridOptions}).gridstackNode?.subGrid;
           for(let grandchild of child.children) {
-            let field_uuid = grandchild.content;
+            let field_uuid = grandchild.uuid;
             let field = this.appFieldSelectorFromUUID(field_uuid);
             subGrid!.addWidget(field, {x: grandchild.x, y: grandchild.y, w: grandchild.w, h: grandchild.h})
             field_uuids_not_in_grid.delete(field_uuid);
           }
         } else {
-          let field_uuid = child.content;
+          let field_uuid = child.uuid;
           let field = this.appFieldSelectorFromUUID(field_uuid);
           this.grid?.addWidget(field, {x: child.x, y: child.y, w: child.w, h: child.h})
           field_uuids_not_in_grid.delete(field_uuid);
@@ -799,6 +813,27 @@ export class DatasetComponent implements OnInit, OnChanges {
     //   }
     // }
     // return undefined;
+  }
+
+  private persistGrid(grid: GridStack) {
+    let persisted_grid: any = {children: []};
+    for(let child_node of grid.engine.nodes) {
+      let persisted_child: any = {x: child_node.x, y: child_node.y, w: child_node.w, h: child_node.h};
+      if('subGrid' in child_node) {
+        persisted_child.children = []
+        for(let grandchild_node of child_node.subGrid?.engine?.nodes!) {
+          let persisted_grandchild: any = {x: child_node.x, y: child_node.y, w: child_node.w, h: child_node.h};
+          let uuid = this.field_element_to_form_map.get(grandchild_node.el).get('uuid')?.value;
+          persisted_grandchild.uuid = uuid;
+          persisted_child.children.push(persisted_grandchild);
+        }
+      } else {
+        let uuid = this.field_element_to_form_map.get(child_node.el).get('uuid')?.value;
+        persisted_child.uuid = uuid;
+      }
+      persisted_grid.children.push(persisted_child);
+    }
+    return persisted_grid;
   }
 
 }

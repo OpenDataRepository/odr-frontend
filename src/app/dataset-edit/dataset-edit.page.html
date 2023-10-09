@@ -10,7 +10,7 @@
     <ion-grid>
       <ion-row class="ion-text-center">
         <ion-col on-mouseover='displayFormProblems()'>
-          <ion-button expand="block" (click)="saveDraft()" [disabled]="!dataset_component.form?.valid">Save Draft</ion-button>
+          <ion-button expand="block" (click)="saveDraft()" [disabled]="!dataset_component.form.valid">Save Draft</ion-button>
         </ion-col>
         <ion-col>
           <ion-button expand="block" color="danger" (click)="exitEditMode()">Exit Edit Mode</ion-button>

@@ -162,7 +162,8 @@ export class DatasetService {
       uuid: combined.template_uuid,
       fields: combined.fields,
       related_templates: [],
-      plugins: combined.template_plugins
+      plugins: combined.template_plugins,
+      view_settings: combined.view_settings
     };
     let dataset: any = {
       name: combined.name,
@@ -236,7 +237,8 @@ export class DatasetService {
       fields: template.fields,
       related_datasets,
       template_plugins: template.plugins ? template.plugins : {field_plugins: {}, object_plugins: {}},
-      dataset_plugins: dataset.plugins ? dataset.plugins : {field_plugins: {}, object_plugins: {}}
+      dataset_plugins: dataset.plugins ? dataset.plugins : {field_plugins: {}, object_plugins: {}},
+      view_settings: template.view_settings
     };
   }
 
