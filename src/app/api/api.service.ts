@@ -282,6 +282,19 @@ export class ApiService {
   }
 
 
+  createTemplateField(template_field: any) {
+    return this.reqHeader()
+    .pipe(
+      switchMap((headers: any) => {
+        return this.http
+        .post(
+          environment.backend_url +  '/template_field',
+          template_field,
+          { headers }
+        );
+      })
+    )
+  }
 
   fetchTemplateFieldDraft(uuid: string) {
     return this.reqHeader()

@@ -138,18 +138,16 @@ export class DatasetComponent implements OnInit, OnChanges {
     }
   }
 
-  addEmptyField(x = 0, y = -1, grid = this.grid) {
+  newField(x = 0, y = -1, grid = this.grid) {
     if(y < 0) {
       y = this.gridHeight();
     }
-    let new_field = this._fb.group({
-      name: new FormControl(null, [Validators.required]),
-      description: new FormControl(null),
-      type: new FormControl('none')
+    this.api.createTemplateField({}).subscribe((template_field: any) => {
+      let new_field_form = this.convertFieldObjectToForm(template_field);
+      this.fields_form_array.push(new_field_form);
+      let el = this.appFieldSelectorFromForm(new_field_form);
+      grid!.addWidget(el, {x, y});
     });
-    this.fields_form_array.push(new_field);
-    let el = this.appFieldSelectorFromForm(new_field);
-    grid!.addWidget(el, {x, y});
   }
 
   loadFieldsAvailableToLink(){
@@ -699,7 +697,7 @@ export class DatasetComponent implements OnInit, OnChanges {
           this.newFieldGroup(x, y, items[0].grid);
         } else if (el.innerText == 'New field') {
           this.removeWidgetFromGrid(el);
-          this.addEmptyField(x, y, items[0].grid);
+          this.newField(x, y, items[0].grid);
         }
       }
     })
@@ -729,6 +727,7 @@ export class DatasetComponent implements OnInit, OnChanges {
       for(let node of nodes) {
         if(!('subGrid' in node)) {
           this.removeFieldFromDataByForm(this.field_element_to_form_map.get(node.el));
+          // TODO: also need to detect if this field should be deleted entirely. If so, delete
         }
       }
     });
