@@ -13,7 +13,7 @@ import { PluginsService } from 'src/app/shared/plugins.service';
 export class FieldComponent implements OnInit, OnChanges {
 
   @Input()
-  form: FormGroup|any;
+  form: FormGroup = new FormGroup({});
 
   @Input()
   disabled: boolean = false;
@@ -34,8 +34,8 @@ export class FieldComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges() {
-    if(!this.disabled && this.uuid) {
-      this.permissionService.hasPermission(this.uuid.value, 'edit').subscribe(result => {this.edit_permission = result as boolean;});
+    if(!this.disabled && this.form?.contains('uuid')) {
+      this.permissionService.hasPermission(this.uuid?.value, 'edit').subscribe(result => {this.edit_permission = result as boolean;});
       // this.permission_checked = true;
     }
   }
@@ -44,7 +44,7 @@ export class FieldComponent implements OnInit, OnChanges {
 
   get description() { return this.form.get('description'); }
 
-  get uuid() { return this.form.get('uuid'); }
+  get uuid() { return this.form?.get('uuid'); }
 
   get public_date() { return this.form.get('public_date'); }
 

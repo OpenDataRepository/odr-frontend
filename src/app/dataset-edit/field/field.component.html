@@ -12,7 +12,7 @@ Even if the user doesn't have edit access to the field, they can still edit plug
       <p>Value Preview...</p>
     </ion-label>
     <div slot="end" *ngIf="!disabled" style="display: grid; margin-inline-start: 0px;">
-      <ion-button [attr.id]="'edit-field-' + template_uuid + '-' + uuid?.value" [disabled]="!may_edit"><ion-icon name="pencil-outline"></ion-icon></ion-button>
+      <ion-button [attr.id]="'edit-field-' + template_uuid + '-' + uuid?.value"><ion-icon name="pencil-outline"></ion-icon></ion-button>
       <ion-button (click)="remove.emit()" color="danger"><ion-icon name="trash-outline"></ion-icon></ion-button>
     </div>
   </ion-item>
@@ -65,7 +65,7 @@ Even if the user doesn't have edit access to the field, they can still edit plug
                 </ion-select>
               </ion-item>
             </div>
-            <ion-item *ngIf="!may_edit" lines="none">Field Type: {{ type.value }}</ion-item>
+            <ion-item *ngIf="!may_edit" lines="none">Field Type: {{ type!.value }}</ion-item>
 
             <div *ngIf="!!uuid">
               <ion-item lines="none">Plugins: </ion-item>
@@ -103,9 +103,9 @@ Even if the user doesn't have edit access to the field, they can still edit plug
               </div>
               <div *ngIf="may_edit && !!uuid">
                 <ion-item lines="none">
-                  <ion-button [attr.id]="'add-plugin-' + template_uuid + '-' + uuid?.value">Add Plugin</ion-button>
+                  <ion-button [attr.id]="'add-plugin-' + template_uuid + '-' + uuid.value">Add Plugin</ion-button>
                 </ion-item>
-                <ion-modal #add_plugin_modal [attr.trigger]="'add-plugin-' + template_uuid + '-' + uuid?.value">
+                <ion-modal #add_plugin_modal [attr.trigger]="'add-plugin-' + template_uuid + '-' + uuid.value">
                   <ng-template>
                     <ion-header>
                       <ion-toolbar>

@@ -9,8 +9,8 @@
       </div>
     </ion-item>
     <div #collapse="ngbCollapse" (ngbCollapse)="true">
-      <div *ngIf="public || hasViewPermission" #collapse="ngbCollapse" (ngbCollapse)="true">
-        <ion-toolbar>
+      <div *ngIf="may_view">
+        <ion-toolbar *ngIf="may_edit">
           <ion-grid>
             <ion-row class="ion-text-center">
               <ion-col>
@@ -22,28 +22,8 @@
             </ion-row>
           </ion-grid>
         </ion-toolbar>
-        <ion-grid>
-          <ion-row>
-            <ion-col size="6">
-              <div class="sidebar">
-                <!-- will size to match content -->
-                <div class="grid-stack-item">
-                  <div class="grid-stack-item-content">New field</div>
-                </div>
-                <div class="grid-stack-item">
-                  <div class="grid-stack-item-content">Field Group</div>
-                </div>
-              </div>
-            </ion-col>
-            <ion-col size="6">
-              <div class="trash" id="trash"></div>
-            </ion-col>
-          </ion-row>
-        </ion-grid>
         <div class="ion-padding">
-          <gridstack [options]="defaultTopGridOptions">
-            <div empty-content>Add a field or field group to get started!</div>
-          </gridstack>
+          <ng-container #grid_container></ng-container>
         </div>
 
         <!--

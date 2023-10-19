@@ -1,10 +1,9 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom, lastValueFrom, switchMap } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { DatasetService } from '../api/dataset.service';
 import { DatasetComponent } from './dataset/dataset.component';
-import { PluginsService } from '../shared/plugins.service';
 
 @Component({
   selector: 'app-dataset-edit',
@@ -19,7 +18,7 @@ export class DatasetEditPage implements OnInit {
   form: FormGroup|any = new FormGroup({name: new FormControl(), fields: new FormArray([]),
     related_datasets: new FormArray([])});
 
-  constructor(private route: ActivatedRoute, private router: Router, private datasetService: DatasetService, private pluginsService: PluginsService) { }
+  constructor(private route: ActivatedRoute, private router: Router, private datasetService: DatasetService) { }
 
   ngOnInit() {
   }
