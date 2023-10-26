@@ -89,7 +89,7 @@ export class DatasetComponent implements OnInit, OnChanges {
   constructor(private _fb: FormBuilder, private datasetService: DatasetService, private api: ApiService,
     private alertController: AlertController, private permissionService: PermissionService,
     private fieldService: FieldService, private pluginsService: PluginsService, private viewContainerRef: ViewContainerRef,
-    private cdRef: ChangeDetectorRef) {}
+    private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
   }
@@ -106,6 +106,7 @@ export class DatasetComponent implements OnInit, OnChanges {
         let field_uuid = field_form.get('uuid')?.value;
         this.field_uuid_map[field_uuid] = field_form;
       }
+      this.cdr.detectChanges();
     }
 
     const tryToSetUpGridstack = () => {
