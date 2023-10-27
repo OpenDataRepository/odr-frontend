@@ -1,5 +1,5 @@
 import { Component, DebugElement, Input, SimpleChange, SimpleChanges } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, flush, tick, waitForAsync } from '@angular/core/testing';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -53,8 +53,8 @@ describe('DatasetEditPage', () => {
   class ApiServiceMock {
     createTemplateField = () => {
       return of({
-        uuid: "t_uuid",
-        _id: "t_id",
+        uuid: "f_uuid",
+        _id: "f_id",
         name: "",
         updated_at: (new Date()).toISOString()
       });
@@ -108,8 +108,7 @@ describe('DatasetEditPage', () => {
     dataset_page_component.ionViewWillEnter();
     dataset_page_fixture.detectChanges();
 
-    const dataset_component_debug_elements = dataset_page_fixture.debugElement.queryAll(By.directive(DatasetComponent));
-    dataset_component_debug_element = dataset_component_debug_elements[0];
+    dataset_component_debug_element = dataset_page_fixture.debugElement.query(By.directive(DatasetComponent));
     dataset_component = dataset_component_debug_element.componentInstance;
 
     expect(dataset_component).toBeTruthy();
@@ -154,7 +153,7 @@ describe('DatasetEditPage', () => {
       let fields = dataset_component.fields_form_array;
       expect(fields.length).toEqual(1);
       let field_form = fields.at(0);
-      expect(field_form.value.uuid).toEqual("t_uuid");
+      expect(field_form.value.uuid).toEqual("f_uuid");
 
       // Item on grid and field in the form are synced in field_element_to_form_map
       let field_element_to_form_map = dataset_component.form.get('field_element_to_form_map')?.value;
@@ -180,7 +179,7 @@ describe('DatasetEditPage', () => {
       let fields = dataset_component.fields_form_array;
       expect(fields.length).toEqual(1);
       let field_form = fields.at(0);
-      expect(field_form.value.uuid).toEqual("t_uuid");
+      expect(field_form.value.uuid).toEqual("f_uuid");
 
       // Item on grid and field in the form are synced in field_element_to_form_map
       let field_element_to_form_map = dataset_component.form.get('field_element_to_form_map')?.value;
@@ -279,85 +278,177 @@ describe('DatasetEditPage', () => {
     });
 
     // I can link a related dataset, add a couple things, and save it just the same
-    // it('can link a related dataset, add a couple things, and save it just the same', async () => {
+    it('can link a related dataset, add a couple things, and save it just the same', async () => {
 
-    //   const apiServiceSpy = jasmine.createSpyObj('ApiService', ['createTemplateField']);
-    //   let return_template_field = {
-    //     uuid: "r_t_uuid",
-    //     _id: "r_t_id",
-    //     name: "",
-    //     updated_at: (new Date()).toISOString()
-    //   };
-    //   apiServiceSpy.createTemplateField.and.returnValue(of(return_template_field));
-    //   TestBed.overrideProvider(ApiService, { useValue: apiServiceSpy });
-    //   const datasetServiceSpy = jasmine.createSpyObj('DatasetService', ['updateDatasetAndTemplate', 'fetchLatestDatasetAndTemplate']);
-    //   datasetServiceSpy.updateDatasetAndTemplate.and.returnValue(of(null));
-    //   let last_saved_data;
-    //   // TODO: problem. The form is set both by ionViewWillEnter and ngOnChanges.
-    //   // This test is copied from the last one. I need to change the starting data to have a field and nested grid, and then add a related dataset and add stuff to it
-    //   datasetServiceSpy.fetchLatestDatasetAndTemplate.and.callFake(() => {
-    //     let last_update_call = datasetServiceSpy.updateDatasetAndTemplate.calls.mostRecent();
-    //     const data = last_update_call ? last_update_call.args[0] : {};
-    //     last_saved_data = data;
-    //     last_saved_data.public_date = (new Date()).toISOString();
-    //     return of(data);
-    //   });
-    //   TestBed.overrideProvider(ApiService, { useValue: apiServiceSpy });
-    //   TestBed.overrideProvider(DatasetService, { useValue: datasetServiceSpy });
-    //   setUpComponentAndFixture();
-    //   setUpGridStack();
+      const datasetServiceSpy = jasmine.createSpyObj('DatasetService', ['updateDatasetAndTemplate', 'fetchLatestDatasetAndTemplate', 'newEmptyDatasetAndTemplate']);
+      datasetServiceSpy.updateDatasetAndTemplate.and.returnValue(of(null));
+      let last_saved_data;
+      datasetServiceSpy.fetchLatestDatasetAndTemplate.and.callFake(() => {
+        let last_update_call = datasetServiceSpy.updateDatasetAndTemplate.calls.mostRecent();
+        const data = last_update_call ? last_update_call.args[0] : {updated_at: (new Date()).toISOString(), related_datasets: []};
+        last_saved_data = data;
+        last_saved_data.public_date = (new Date()).toISOString();
+        if(last_saved_data.related_datasets.length > 0) {
+          // this needed for gridstack on related child.
+          last_saved_data.related_datasets[0].public_date = (new Date()).toISOString();
+        }
+        return of(data);
+      });
+      datasetServiceSpy.newEmptyDatasetAndTemplate.and.returnValue(of({
+        dataset_uuid: "rd_uuid",
+        dataset_id: "rd_id",
+        template_uuid: "rt_uuid",
+        template_id: "rt_id",
+        name: "name",
+        dataset_updated_at: (new Date()).toISOString(),
+        template_updated_at: (new Date()).toISOString(),
+        dataset_persist_date: undefined,
+        updated_at: (new Date()).toISOString(),
+        public_date: (new Date()).toISOString(),  // Needed for gridstack since it's behind the may_view ngIf
+        fields: [],
+        related_datasets: []
+      }));
+      TestBed.overrideProvider(DatasetService, { useValue: datasetServiceSpy });
+      setUpComponentAndFixture();
 
-    //   const add_field_button = dataset_fixture.nativeElement.querySelector('#add_field');
-    //   add_field_button.click();
-    //   const add_field_group_button = dataset_fixture.nativeElement.querySelector('#add_field_group');
-    //   add_field_group_button.click();
+      expect(getGridstack()).toBeTruthy();
 
-    //   dataset_fixture.detectChanges();
+      const add_field_button = dataset_component_debug_element.nativeElement.querySelector('#add_field');
+      add_field_button.click();
+      const add_field_group_button = dataset_component_debug_element.nativeElement.querySelector('#add_field_group');
+      add_field_group_button.click();
 
-    //   // Item was added to the grid
-    //   const gridstack_item = gridstack.nativeElement.querySelector('.grid-stack-item');
-    //   expect(gridstack_item).toBeTruthy();
+      dataset_page_fixture.detectChanges();
 
-    //   // Nested grid was added to the grid
-    //   const nested_gridstack = gridstack.nativeElement.querySelector('.grid-stack');
-    //   expect(nested_gridstack).toBeTruthy();
+      // Item was added to the grid
+      const gridstack_item = getGridstack().nativeElement.querySelector('.grid-stack-item');
+      expect(gridstack_item).toBeTruthy();
 
-    //   // Save the dataset
-    //   await lastValueFrom(dataset_component.saveDraft());
+      // Nested grid was added to the grid
+      const nested_gridstack = getGridstack().nativeElement.querySelector('.grid-stack');
+      expect(nested_gridstack).toBeTruthy();
 
-    //   // Rebuild the dataset_component  with the form
-    //   setUpComponentAndFixture();
-    //   setUpGridStack(dataset_component.convertDatasetObjectToForm(last_saved_data));
+      // Add a related dataset
+      const add_related_dataset_button = dataset_component_debug_element.nativeElement.querySelector('#add_related_dataset');
+      add_related_dataset_button.click();
+      dataset_page_fixture.detectChanges();
 
-    //   // Item was added to the grid
-    //   const gridstack_item_after_save = gridstack.nativeElement.querySelector('.grid-stack-item');
-    //   expect(gridstack_item_after_save).toBeTruthy();
+      // Add item and nested grid to related datset
+      let related_dataset_debug_element = dataset_component_debug_element.query(By.directive(DatasetComponent));
+      let related_dataset_gridstack = related_dataset_debug_element.nativeElement.querySelector('.grid-stack');
+      expect(related_dataset_gridstack).toBeTruthy();
+      const related_dataset_add_field_group_button = related_dataset_debug_element.nativeElement.querySelector('#add_field_group');
+      related_dataset_add_field_group_button.click();
+      const related_dataset_add_field_button = related_dataset_debug_element.nativeElement.querySelector('#add_field');
+      related_dataset_add_field_button.click();
+      dataset_page_fixture.detectChanges();
 
-    //   // Field in form and on grid match
-    //   let fields = dataset_component.fields_form_array;
-    //   expect(fields.length).toEqual(1);
-    //   let field_form = fields.at(0);
-    //   let field_element_to_form_map = dataset_component.form.get('field_element_to_form_map')?.value;
-    //   expect(field_element_to_form_map).toBeTruthy();
-    //   let field_map_value = field_element_to_form_map?.get(gridstack_item_after_save);
-    //   expect(field_map_value).toBe(field_form);
+      // Check related dataset grid item and field in form are synced
+      const related_gridstack_item = related_dataset_gridstack.querySelectorAll('.grid-stack-item')[1];
+      expect(related_gridstack_item).toBeTruthy();
+      let related_dataset_component = related_dataset_debug_element.componentInstance;
+      let fields = related_dataset_component.fields_form_array;
+      expect(fields.length).toEqual(1);
+      let field_form = fields.at(0);
+      let field_element_to_form_map = related_dataset_component.form.get('field_element_to_form_map')?.value;
+      expect(field_element_to_form_map).toBeTruthy();
+      let field_map_value = field_element_to_form_map?.get(related_gridstack_item);
+      expect(field_map_value).toBe(field_form);
 
-    //   const nested_gridstack_after_save = gridstack.nativeElement.querySelector('.grid-stack');
-    //   expect(nested_gridstack_after_save).toBeTruthy();
+      // Save the dataset
+      lastValueFrom(dataset_component.saveDraft());
 
-    //   // delay end of test for a bit to let gridstack do its thing
-    //   await new Promise(resolve => setTimeout(resolve, 10));
-    // });
+      // Rebuild the dataset_component  with the form
+      setUpComponentAndFixture();
+      dataset_page_component.form = dataset_component.convertDatasetObjectToForm(last_saved_data);
+      dataset_page_fixture.detectChanges();
 
+      // Item was added to the dataset grid
+      const gridstack_item_after_save = getGridstack().nativeElement.querySelector('.grid-stack-item');
+      expect(gridstack_item_after_save).toBeTruthy();
 
-    // TODO: add the following tests (if possible):
+      // dataset: field in form and on grid match
+      fields = dataset_component.fields_form_array;
+      expect(fields.length).toEqual(1);
+      field_form = fields.at(0);
+      field_element_to_form_map = dataset_component.form.get('field_element_to_form_map')?.value;
+      expect(field_element_to_form_map).toBeTruthy();
+      field_map_value = field_element_to_form_map?.get(gridstack_item_after_save);
+      expect(field_map_value).toBe(field_form);
+
+      // nested grid was added to the dataset grid
+      const nested_gridstack_after_save = getGridstack().nativeElement.querySelector('.grid-stack');
+      expect(nested_gridstack_after_save).toBeTruthy();
+
+      related_dataset_debug_element = dataset_component_debug_element.query(By.directive(DatasetComponent));
+      related_dataset_gridstack = related_dataset_debug_element.nativeElement.querySelector('.grid-stack');
+
+      // Item was added to the related_dataset grid
+      const related_gridstack_item_after_save = related_dataset_gridstack.querySelectorAll('.grid-stack-item')[1];
+      expect(related_gridstack_item_after_save).toBeTruthy();
+
+      // related_dataset: field in form and on grid match
+      related_dataset_component = related_dataset_debug_element.componentInstance;
+      fields = related_dataset_component.fields_form_array;
+      expect(fields.length).toEqual(1);
+      field_form = fields.at(0);
+      field_element_to_form_map = related_dataset_component.form.get('field_element_to_form_map')?.value;
+      expect(field_element_to_form_map).toBeTruthy();
+      field_map_value = field_element_to_form_map?.get(related_gridstack_item_after_save);
+      expect(field_map_value).toBe(field_form);
+
+      // nested grid was added to the related_dataset grid
+      const related_nested_gridstack_after_save = getGridstack().nativeElement.querySelector('.grid-stack');
+      expect(related_nested_gridstack_after_save).toBeTruthy();
+
+    });
+
+    // TODO: Maybe at some point in the future I can figure out how to test that all of the dragging functionality works
     // 4. I can remove a field via drag, and it exists in neither place
     // 6. I can remove a field group
     // 7. I can drag a field to a field group, and it still exists on the form
     // 8. I can drag a field out of a field group, and it still exists on the form
     // 9. I can delete a field group via drag, and all of it's fields are removed from the form
-
     // 12. I can't move fields or field groups between datasets
+
+
+    // I can drag a grid-stack-item within the grid-stack
+    // it('can add a field/widget to gridstack via the button', async () => {
+    //   setUpComponentAndFixture();
+    //   const button = dataset_component_debug_element.nativeElement.querySelector('#add_field');
+    //   button.click();
+
+    //   dataset_page_fixture.detectChanges();
+    //   await dataset_page_fixture.whenStable();
+
+    //   // Item was added to the grid
+    //   const gridstack_item = getGridstack().nativeElement.querySelector('.grid-stack-item');
+
+    //   const dataset_component_position = dataset_component_debug_element.nativeElement.getBoundingClientRect();
+
+    //   // Get the initial position of the Gridstack item
+    //   const initial_position = gridstack_item.getBoundingClientRect();
+
+    //   // Simulate a drag event on the Gridstack item
+    //   const drag_event = new MouseEvent('mousedown', { clientX: initial_position.left, clientY: initial_position.top });
+    //   gridstack_item.dispatchEvent(drag_event);
+
+    //   // Simulate a move event on the Gridstack item
+    //   const move_event = new MouseEvent('mousemove', { clientX: initial_position.left + 500, clientY: initial_position.top });
+    //   document.dispatchEvent(move_event);
+
+    //   // Simulate a drop event on the Gridstack item
+    //   const drop_event = new MouseEvent('mouseup', { clientX: initial_position.left + 500, clientY: initial_position.top });
+    //   document.dispatchEvent(drop_event);
+
+    //   // Get the final position of the Gridstack item
+    //   const final_position = gridstack_item.getBoundingClientRect();
+
+    //   // Expect the final position to be different from the initial position
+    //   expect(final_position.left).not.toBe(initial_position.left);
+    //   expect(final_position.top).toBe(initial_position.top);
+
+    // });
 
     // I can add a field via drag and drop, and it exists in the fields and on the grid, and they are synced
     // it('can add a field/widget to gridstack via drag and drop', () => {

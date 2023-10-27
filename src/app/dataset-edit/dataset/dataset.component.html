@@ -138,7 +138,7 @@
           </div>
           <div *ngIf="may_edit">
             <ion-item lines="none">
-              <ion-button (click)="addRelatedDataset()">New Dataset</ion-button>
+              <ion-button id="add_related_dataset" (click)="addRelatedDataset()">New Dataset</ion-button>
               <ion-button [attr.id]="'link-existing-dataset-' + uuid?.value"
                 (click)="loadDatasetsAvailableToLink()">
                 Link Existing Dataset

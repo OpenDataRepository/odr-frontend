@@ -270,6 +270,7 @@ export class DatasetComponent implements OnInit, OnChanges {
             template_id: related_dataset_object.template_id,
             name: new FormControl(null, [Validators.required]),
             group_uuid: this.form.get('group_uuid')?.value,
+            updated_at: related_dataset_object.dataset_updated_at,
             fields: this._fb.array([]),
             related_datasets: this._fb.array([]),
             template_plugins: {field_plugins: {}, object_plugins: {}},
@@ -595,6 +596,7 @@ export class DatasetComponent implements OnInit, OnChanges {
 
     this.copyOptionalFieldToComponentForm('public_date', new_form);
     this.copyOptionalFieldToComponentForm('type', new_form);
+    this.copyOptionalFieldToComponentForm('updated_at', new_form);
 
     this.form.removeControl('fields');
     this.form.addControl('fields', new_form.get('fields'));
