@@ -8,8 +8,9 @@ import { of } from 'rxjs';
 import { ApiService } from 'src/app/api/api.service';
 import { PermissionService } from 'src/app/api/permission.service';
 import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
+import { DebugElement, SimpleChange, SimpleChanges } from '@angular/core';
 import { PluginsService } from 'src/app/shared/plugins.service';
+import { NgbCollapseModule } from '@ng-bootstrap/ng-bootstrap';
 
 describe('DatasetEditComponent', () => {
   let component: DatasetComponent;
@@ -54,7 +55,8 @@ describe('DatasetEditComponent', () => {
       ],
       imports: [
         IonicModule.forRoot(),
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        NgbCollapseModule
       ]
     }).compileComponents();
 
