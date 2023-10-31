@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { DatasetService } from '../api/dataset.service';
 import { DatasetComponent } from './dataset/dataset.component';
+import { GridStack } from 'gridstack';
 
 @Component({
   selector: 'app-dataset-edit',
@@ -21,6 +22,7 @@ export class DatasetEditPage implements OnInit {
   constructor(private route: ActivatedRoute, private router: Router, private datasetService: DatasetService) { }
 
   ngOnInit() {
+    GridStack.setupDragIn('.sidebar .grid-stack-item', { appendTo: 'body', helper: 'clone' });
   }
 
   async ionViewWillEnter() {

@@ -71,7 +71,7 @@ export class DatasetComponent implements OnInit, OnChanges {
   private static default_top_grid_options : NgGridStackOptions = { // main grid options
     column: 6,
     subGridOpts: DatasetComponent.default_sub_grid_options,
-    removable: '.trash',
+    // removable: '.trash',
     acceptWidgets: true,
     ...DatasetComponent.default_base_grid_options
   };
@@ -83,8 +83,6 @@ export class DatasetComponent implements OnInit, OnChanges {
     ...DatasetComponent.default_sub_grid_options
   };
   grid_opts_ready = false;
-
-  private removed_fields_in_limbo = new Set();
 
   constructor(private _fb: FormBuilder, private datasetService: DatasetService, private api: ApiService,
     private alertController: AlertController, private permissionService: PermissionService,
@@ -165,8 +163,6 @@ export class DatasetComponent implements OnInit, OnChanges {
       gridCompRef.setInput('options', this.top_grid_options);
       gridCompRef.changeDetectorRef.detectChanges();
       this.gridComp = gridCompRef.instance;
-
-      GridStack.setupDragIn('.sidebar .grid-stack-item', { appendTo: 'body', helper: 'clone' });
     }
 
     if(!this.grid) {
@@ -177,6 +173,7 @@ export class DatasetComponent implements OnInit, OnChanges {
     this.loadGridstackItems();
     this.recursiveAddEventHandlers(this.grid!);
     this.recursiveAddTemplateUuidClass(this.grid!); // Needed to restrict moving items between grids
+    this.recursiveAddNestedGridRemoveButton(this.grid!);
   }
 
   makePublic() {
@@ -197,14 +194,22 @@ export class DatasetComponent implements OnInit, OnChanges {
     }
   }
 
+  private newFieldEl() {
+    return this.api.createTemplateField({}).pipe(
+      switchMap((template_field: any) => {
+        let new_field_form = this.convertFieldObjectToForm(template_field);
+        this.fields_form_array.push(new_field_form);
+        let el = this.appFieldSelectorFromForm(new_field_form);
+        return of(el);
+      })
+    );
+  }
+
   newField(x = 0, y = -1, grid = this.grid) {
     if(y < 0) {
       y = this.gridHeight();
     }
-    this.api.createTemplateField({}).subscribe((template_field: any) => {
-      let new_field_form = this.convertFieldObjectToForm(template_field);
-      this.fields_form_array.push(new_field_form);
-      let el = this.appFieldSelectorFromForm(new_field_form);
+    this.newFieldEl().subscribe((el: any) => {
       grid!.addWidget(el, {x, y});
     });
   }
@@ -258,6 +263,7 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   deleteRelatedDataset(index: number) {
     this.related_datasets_form_array.removeAt(index);
+    // TODO: If the related dataset is deleted, need to update gridstack options so the trash component works (bound to latest gridstack options)
   }
 
   addRelatedDataset() {
@@ -720,6 +726,7 @@ export class DatasetComponent implements OnInit, OnChanges {
       y = this.gridHeight();
     }
     let new_el = grid!.addWidget({x, y, subGridOpts: this.sub_grid_options});
+    this.addRemoveButtonToNestedGrid(new_el);
     setTimeout(() => {
       this.addEvents(new_el?.gridstackNode?.subGrid as GridStack);
     }, 10);
@@ -743,7 +750,7 @@ export class DatasetComponent implements OnInit, OnChanges {
     return height;
   }
 
-  public recursiveAddEventHandlers(grid: GridStack) {
+  private recursiveAddEventHandlers(grid: GridStack) {
     this.addEvents(grid);
     for(let node of grid.engine.nodes) {
       if('subGrid' in node) {
@@ -752,7 +759,7 @@ export class DatasetComponent implements OnInit, OnChanges {
     }
   }
 
-  public recursiveAddTemplateUuidClass(grid: GridStack) {
+  private recursiveAddTemplateUuidClass(grid: GridStack) {
     for(let node of grid.engine.nodes) {
       node.el!.classList.add('template-uuid-' + this.template_uuid?.value);
       if('subGrid' in node) {
@@ -761,25 +768,58 @@ export class DatasetComponent implements OnInit, OnChanges {
     }
   }
 
+  private recursiveAddNestedGridRemoveButton(grid: GridStack) {
+    for(let node of grid.engine.nodes) {
+      if('subGrid' in node) {
+        this.addRemoveButtonToNestedGrid(node.el!);
+        this.recursiveAddNestedGridRemoveButton(node.subGrid!);
+      }
+    }
+  }
+
+  private addRemoveButtonToNestedGrid(el: GridItemHTMLElement) {
+    const button = document.createElement('ion-button');
+    button.color = 'danger';
+    button.style.position = 'absolute';
+    button.style.top = '0';
+    button.style.right = '0';
+    const icon = document.createElement('ion-icon');
+    icon.name = 'trash';
+    button.appendChild(icon);
+    button.addEventListener('click', () => {
+      this.removeWidgetFromGrid(el);
+    });
+    el.firstChild?.appendChild(button);
+  }
+
   private addEvents(grid: GridStack) {
     grid.on('added', (event: any, items: any) => {
       for(let item of items) {
         item.el.classList.add('template-uuid-' + this.template_uuid?.value);
         // This is needed to stop the form from being deleted if the field is moved from one grid to another
-        let form = this.field_element_to_form_map?.get(item.el);
-        this.removed_fields_in_limbo.delete(form);
       }
-      // TODO: add test cases for this if possible
+      // TODO: when drag tests are possible, add test cases for this
       if(items.length == 1) {
-        let el = items[0].el;
-        let x = el.gridstackNode.x;
-        let y = el.gridstackNode.y;
+        let item = items[0];
+        let el = item.el;
+        let x = item.x;
+        let y = item.y;
+        // TODO: for some reason, this triggers twice. Maybe because I remove it while it's being added, which is unintended behavior]
+        // See if it's possible to instead change the el on the item, rather than deleting the item and adding one back
         if(el.innerText == "Field Group") {
           this.removeWidgetFromGrid(el);
-          this.newFieldGroup(x, y, items[0].grid);
+          this.newFieldGroup(x, y, item.grid);
         } else if (el.innerText == 'New field') {
+          console.log('new field element');
+          // this.newFieldEl().subscribe((new_el: any) => {
+          //   let gridstackNode = item.el.gridstackNode;
+          //   gridstackNode.el = new_el;
+          //   new_el.gridstackNode = gridstackNode;
+          //   item.el = new_el;
+          // });
+
           this.removeWidgetFromGrid(el);
-          this.newField(x, y, items[0].grid);
+          this.newField(x, y, item.grid);
         }
       }
     })
@@ -806,21 +846,10 @@ export class DatasetComponent implements OnInit, OnChanges {
     })
     .on('removed', (event: Event, nodes: GridStackNode[]) => {
       console.log('removed called');
-      // for(let node of nodes) {
-      //   if(!('subGrid' in node)) {
-      //     let form = this.field_element_to_form_map.get(node.el);
-      //     this.removed_fields_in_limbo.add(form);
-      //     setTimeout(() => {
-      //       if(this.removed_fields_in_limbo.has(form)) {
-      //         this.removeFieldFromDataByForm(form);
-      //       }
-      //     }, 250);
-      //     // TODO: also need to detect if this field should be deleted entirely. If so, delete
-      //   }
-      // }
       // If a nested grid is removed, remove it's fields from the form so they are permanently removed
       for(let node of nodes) {
-        if('subGridOpts' in node) {
+        // TODO: when drag is testable, test that this doesn't throw an error if there are no children in the node
+        if('subGridOpts' in node && node.subGridOpts!.children) {
           for(let child of node.subGridOpts!.children!){
             let child_el = (child as any).el;
             let child_form = this.field_element_to_form_map.get(child_el);
