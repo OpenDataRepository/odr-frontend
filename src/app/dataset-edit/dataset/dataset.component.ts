@@ -108,6 +108,7 @@ export class DatasetComponent implements OnInit, OnChanges {
     }
 
     const tryToSetUpGridstack = () => {
+      // Need grid_container in order to have a spot to add the gridstack component
       if(!this.template_uuid || !this.grid_container) {
         return;
       }
@@ -145,6 +146,8 @@ export class DatasetComponent implements OnInit, OnChanges {
     }
     this.top_grid_options.subGridOpts!.acceptWidgets = subGridAcceptWidgetsCallback;
     this.sub_grid_options.acceptWidgets = subGridAcceptWidgetsCallback;
+    this.top_grid_options.staticGrid = !this.may_edit;
+    this.top_grid_options.subGridOpts!.staticGrid = !this.may_edit;
     this.grid_opts_ready = true; // The grid will only take the above options if they exist before it is initialized on the dom
 
   }
@@ -173,7 +176,9 @@ export class DatasetComponent implements OnInit, OnChanges {
     this.loadGridstackItems();
     this.recursiveAddEventHandlers(this.grid!);
     this.recursiveAddTemplateUuidClass(this.grid!); // Needed to restrict moving items between grids
-    this.recursiveAddNestedGridRemoveButton(this.grid!);
+    if(this.may_edit) {
+      this.recursiveAddNestedGridRemoveButton(this.grid!);
+    }
   }
 
   makePublic() {
@@ -244,8 +249,11 @@ export class DatasetComponent implements OnInit, OnChanges {
         if(this.datasetHasField(uuid)) {
           return from(this.presentAlert('Cannot link the chosen field as it is already linked'));
         } else {
-          this.fields_form_array.push(this.convertFieldObjectToForm(related_field));
-          return this.saveDraft();
+          let field_form = this.convertFieldObjectToForm(related_field);
+          this.fields_form_array.push(field_form);
+          let el = this.appFieldSelectorFromForm(field_form);
+          this.grid!.addWidget(el, {x: 0, y: this.gridHeight()});
+          return of({});
         }
       })
     ).subscribe();
@@ -381,7 +389,8 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   get may_view() { return this.public || this.hasViewPermission }
 
-  get may_edit() { return !this.disabled && this.edit_permission; }
+  // It's important to only disable editing if edit permissions have already been fetched, so the gridstack is intialized correctly
+  get may_edit() { return !this.disabled && (this.edit_permission != undefined ? this.edit_permission : true) }
 
   get all_object_plugins(): Record<string, number[]> {
     return this.pluginsService.all_dataset_plugins;
@@ -806,7 +815,7 @@ export class DatasetComponent implements OnInit, OnChanges {
         let y = item.y;
         // TODO: for some reason, this triggers twice. Maybe because I remove it while it's being added, which is unintended behavior]
         // See if it's possible to instead change the el on the item, rather than deleting the item and adding one back
-        if(el.innerText == "Field Group") {
+        if(el.innerText == "New Field Group") {
           this.removeWidgetFromGrid(el);
           this.newFieldGroup(x, y, item.grid);
         } else if (el.innerText == 'New field') {

@@ -54,6 +54,8 @@ export class FieldComponent implements OnInit, OnChanges {
 
   get may_edit() { return !this.uuid || (!this.disabled && this.edit_permission); }
 
+  get may_view() { return this.updated_at || this.public_date; }
+
   get all_field_plugins(): Record<string, number[]> {
     return this.pluginsService.all_field_plugins;
   }
