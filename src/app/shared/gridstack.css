@@ -2,7 +2,7 @@
 @import "../../../node_modules/gridstack/dist/gridstack-extra.css";
 
 .grid-stack {
-  background: #FAFAD2;
+  background-color: white;
 }
 .grid-stack-item-content {
   text-align: center;
@@ -22,7 +22,7 @@
   text-align: center;
 }
 .sidebar .grid-stack-item {
-  width: 120px;
+  width: 150px;
   height: 50px;
   border: 2px dashed green;
   text-align: center;
@@ -34,10 +34,15 @@
 .sidebar .grid-stack-item .grid-stack-item-content {
   background: none;
 }
-/* make nested grid have slightly darker bg take almost all space (need some to tell them apart) so items inside can have similar to external size+margin */
+
+.grid-stack-sub-grid {
+  background-color: white;
+  outline: 1px solid blue;
+}
+
 .grid-stack > .grid-stack-item.grid-stack-sub-grid > .grid-stack-item-content {
-  background: rgba(0,0,0,0.1);
-  inset: 0 2px;
+  background-color: white;
+  inset: 0 0px;
 }
 .grid-stack.grid-stack-nested {
   background: none;

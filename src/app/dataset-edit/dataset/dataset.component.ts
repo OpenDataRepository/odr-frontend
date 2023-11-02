@@ -11,6 +11,7 @@ import { PluginsService } from 'src/app/shared/plugins.service';
 import { GridstackComponent, NgGridStackOptions } from 'gridstack/dist/angular';
 import { GridItemHTMLElement, GridStack, GridStackNode } from 'gridstack';
 import { FieldComponent } from '../field/field.component';
+import { default_base_grid_options, gridHeight } from 'src/app/shared/gridstack-settings';
 
 @Component({
   selector: 'dataset-edit',
@@ -56,24 +57,17 @@ export class DatasetComponent implements OnInit, OnChanges {
 
   field_uuid_map: any = {};
 
-  private static default_base_grid_options: NgGridStackOptions = {
-    cellHeight: 75,
-    margin: 5,
-    minRow: 1, // don't collapse when empty
-    disableOneColumnMode: false,
-    float: true
-  };
   private static default_sub_grid_options: NgGridStackOptions = {
     column: 'auto',
     acceptWidgets: defaultNestedAcceptWidgets,
-    ...DatasetComponent.default_base_grid_options
+    ...default_base_grid_options
   }
   private static default_top_grid_options : NgGridStackOptions = { // main grid options
     column: 6,
     subGridOpts: DatasetComponent.default_sub_grid_options,
     // removable: '.trash',
     acceptWidgets: true,
-    ...DatasetComponent.default_base_grid_options
+    ...default_base_grid_options
   };
 
   top_grid_options : NgGridStackOptions = {
@@ -747,16 +741,7 @@ export class DatasetComponent implements OnInit, OnChanges {
   }
 
   private gridHeight() {
-    let height = 0;
-    for(let child of this.grid!.engine.nodes) {
-      let childY = child.y ? child.y : 0;
-      let childH = child.h ? child.h : 0;
-      let childMaxY = childY + childH;
-      if(childMaxY > height) {
-        height = childMaxY;
-      }
-    }
-    return height;
+    return gridHeight(this.grid!);
   }
 
   private recursiveAddEventHandlers(grid: GridStack) {
