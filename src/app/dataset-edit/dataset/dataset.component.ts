@@ -138,10 +138,10 @@ export class DatasetComponent implements OnInit, OnChanges {
       return element.classList.contains(accept_widget_class)
         || element.classList.length==1; // from the sidebar
     }
-    this.top_grid_options.subGridOpts!.acceptWidgets = subGridAcceptWidgetsCallback;
+    // TODO: consider writing a test case that top grid and nested grids share static property
     this.sub_grid_options.acceptWidgets = subGridAcceptWidgetsCallback;
     this.top_grid_options.staticGrid = !this.may_edit;
-    this.top_grid_options.subGridOpts!.staticGrid = !this.may_edit;
+    this.sub_grid_options.staticGrid = !this.may_edit;
     this.grid_opts_ready = true; // The grid will only take the above options if they exist before it is initialized on the dom
 
   }
