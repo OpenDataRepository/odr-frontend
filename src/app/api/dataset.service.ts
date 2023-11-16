@@ -56,12 +56,24 @@ export class DatasetService {
     return this.fetchSyncedDatasetAndTemplateDraft(dataset_uuid).pipe(
       catchError(error => {
         if(error.status == 404 || error.status == 401) {
-          return this.fetchPersistedDatasetAndTemplate(dataset_uuid);
+          return this.fetchLatestPersistedDatasetAndTemplate(dataset_uuid);
         } else {
           return throwError(() => error);
         }
       }),
     )
+  }
+
+  fetchDatasetAndTemplateVersion(dataset_id: string) {
+    return this.api.fetchDatasetPersistedVersion(dataset_id).pipe(
+      switchMap((dataset: any) => {
+        return this.api.fetchTemplateVersion(dataset.template_id).pipe(
+          switchMap((template) => {
+            return of(this.combineTemplateAndDataset(template, dataset));
+          })
+        )
+      })
+    );
   }
 
   persistDatasetAndTemplate(combined_dataset_template: any) {
@@ -79,7 +91,7 @@ export class DatasetService {
     )
   }
 
-  private fetchPersistedDatasetAndTemplate(dataset_uuid: string) {
+  fetchLatestPersistedDatasetAndTemplate(dataset_uuid: string) {
     let return_dataset: any;
     return this.api.fetchDatasetLatestPersisted(dataset_uuid).pipe(
       switchMap((dataset: any) => {

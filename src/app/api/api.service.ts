@@ -159,6 +159,19 @@ export class ApiService {
     )
   }
 
+  fetchDatasetPersistedVersion(id: string) {
+    return this.reqHeader()
+    .pipe(
+      switchMap((headers: any) => {
+        return this.http
+        .get(
+          environment.backend_url +  '/dataset/persisted_version/' + id,
+          { headers }
+        );
+      })
+    )
+  }
+
   datasetDraftExisting(uuid: string) {
     return this.reqHeader()
     .pipe(

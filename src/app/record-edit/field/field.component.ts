@@ -13,21 +13,23 @@ import { v4 as uuidv4 } from 'uuid';
 export class FieldComponent implements OnInit, OnChanges {
 
   @Input()
-  form: FormGroup|any = new FormGroup({value: new FormControl("")});
+  form: FormGroup = new FormGroup({value: new FormControl("")});
 
   @Input()
   disabled: boolean = false;
 
+  @Input()
+  record_uuid: string|undefined;
+
   @Output()
   remove: EventEmitter<void> = new EventEmitter<void>();
 
-  edit_permission = true;
   value_after_plugins: any = null;
 
   constructor(private api: ApiService, private pluginsService: PluginsService) {}
 
   ngOnInit() {
-    this.form.get('value').valueChanges.subscribe((new_value: string) => {
+    this.form.get('value')!.valueChanges.subscribe((new_value: string) => {
       // Update the second field based on the first field's value
       if(this.#hasTransformPlugin()) {
         this.value_after_plugins = this.#pluginsTransformedValue();
@@ -36,39 +38,36 @@ export class FieldComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges() {
-    // TODO: figure out if field should even have it's own permissions. For now, just share the permissions of the record it's on
-    // if(!this.disabled && this.uuid) {
-    //   this.permissionService.hasPermission(this.uuid.value, 'edit').subscribe(result => {this.edit_permission = result as boolean;});
-    //   // this.permission_checked = true;
-    // }
     if(this.#hasTransformPlugin()) {
       this.value_after_plugins = this.#pluginsTransformedValue();
     }
   }
 
-  get uuid() { return this.form.get('uuid'); }
+  get uuid() { return this.form?.get('uuid'); }
 
-  get may_edit() { return !this.disabled && this.edit_permission; }
+  get may_edit() { return !this.disabled }
+
+  get may_view() { return !this.form?.contains('no_permissions'); }
 
   get is_file() {
-    const type = this.form.get('type');
+    const type = this.form?.get('type');
     return type && type.value == 'File';
   }
 
   get file_uuid() {
-    return this.form.get('file')?.value.uuid;
+    return this.form?.get('file')?.value.uuid;
   }
 
   get file_name() {
-    return this.form.get('file')?.value.name;
+    return this.form?.get('file')?.value.name;
   }
 
   get file_upload_progress_map() {
-    return this.form.get('file_upload_progress_map').value;
+    return this.form.get('file_upload_progress_map')?.value;
   }
 
   get plugins() {
-    return this.form.get('plugins').value;
+    return this.form?.get('plugins')?.value;
   }
 
   onFileSelected(event: any): void {
@@ -113,7 +112,7 @@ export class FieldComponent implements OnInit, OnChanges {
 
   #pluginsTransformedValue(): any {
 
-    const value = this.form.get('value').value;
+    const value = this.form.get('value')?.value;
     if(!value) {
       return null;
     }

@@ -8,6 +8,7 @@ import { of } from 'rxjs';
 import { RouterModule } from '@angular/router';
 import { PermissionService } from 'src/app/api/permission.service';
 import { PluginsService } from 'src/app/shared/plugins.service';
+import { NgbCollapseModule } from '@ng-bootstrap/ng-bootstrap';
 
 describe('RecordEditComponent', () => {
   let component: RecordComponent;
@@ -42,7 +43,8 @@ describe('RecordEditComponent', () => {
       imports: [
         IonicModule.forRoot(),
         RouterModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        NgbCollapseModule
       ]
     }).compileComponents();
 
@@ -61,9 +63,14 @@ describe('RecordEditComponent', () => {
       dataset_uuid: new FormControl(),
       fields: new FormArray([]),
       related_records: new FormArray([]),
-      dataset: new FormGroup({
+      combined_dataset_template: new FormGroup({
         uuid: new FormControl(),
-        related_datasets: new FormArray([])
+        related_datasets: new FormArray([]),
+        view_settings: new FormControl({
+          fields_grid: {
+            children: []
+          }
+        })
       })
     });
     fixture.detectChanges();

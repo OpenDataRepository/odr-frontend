@@ -11,6 +11,7 @@ import { RecordComponent } from './record/record.component';
 import { PermissionService } from '../api/permission.service';
 import { AuthService } from '../auth.service';
 import { PluginsService } from '../shared/plugins.service';
+import { NgbCollapseModule } from '@ng-bootstrap/ng-bootstrap';
 
 describe('RecordViewPage', () => {
   let component: RecordViewPage;
@@ -81,7 +82,8 @@ describe('RecordViewPage', () => {
       ],
       imports: [
         IonicModule.forRoot(),
-        RouterModule
+        RouterModule,
+        NgbCollapseModule
       ]
     }).compileComponents();
 

@@ -96,8 +96,8 @@ Even if the user doesn't have edit access to the field, they can still edit plug
                   </ion-item>
                   <ion-list class="ion-margin">
                     <ion-item lines="inset" *ngFor="let plugin_option_name of getPluginOptionKeys(plugin_name)" [detail]="false">
-                      <ion-label>{{ plugin_option_name }}</ion-label>
                       <ion-select
+                        [label]="plugin_option_name"
                         (ionChange)="changePluginOption(plugin_name, plugin_option_name, $event)"
                         [value]="getExistingPluginOption(plugin_name, plugin_option_name)"
                       >

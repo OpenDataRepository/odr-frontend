@@ -1,13 +1,16 @@
 import { HttpEventType } from '@angular/common/http';
-import { Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, ViewContainerRef } from '@angular/core';
 import { FormGroup, FormControl, FormArray, FormBuilder, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { AlertController, IonModal } from '@ionic/angular';
-import { switchMap, of, from, forkJoin, take, Observable } from 'rxjs';
+import { GridstackComponent, NgGridStackOptions } from 'gridstack/dist/angular';
+import { switchMap, of, from, forkJoin, take, Observable, catchError, throwError } from 'rxjs';
 import { ApiService } from 'src/app/api/api.service';
 import { PermissionService } from 'src/app/api/permission.service';
 import { RecordService } from 'src/app/api/record.service';
+import { gridHeight, static_sub_grid_options, static_top_grid_options } from 'src/app/shared/gridstack-settings';
 import { PluginsService } from 'src/app/shared/plugins.service';
 import { graphCsvBlob } from 'src/plugins/dataset_plugins/graph/0.1/plugin';
+import { FieldComponent } from '../field/field.component';
 
 @Component({
   selector: 'record-edit',
@@ -20,7 +23,7 @@ export class RecordComponent implements OnInit, OnChanges {
   is_top_level_record: boolean = false;
 
   @Input()
-  form: FormGroup|any = new FormGroup({name: new FormControl(), fields: new FormArray([]),
+  form: FormGroup = new FormGroup({name: new FormControl(), fields: new FormArray([]),
     related_records: new FormArray([])});
 
   @Input()
@@ -33,30 +36,63 @@ export class RecordComponent implements OnInit, OnChanges {
 
   @ViewChild('graph_plugin') graphPluginRef!: ElementRef
 
+  @ViewChild(GridstackComponent) grid_comp!: GridstackComponent;
+
   graphed: boolean = false;
 
   records_available = false;
   records_to_link: any = [];
 
-  edit_permission = false;
+  edit_permission: boolean|undefined = undefined;
+
+  data_available = false;
+
+  name_field_form: AbstractControl|undefined;
 
   constructor(private _fb: FormBuilder, private api: ApiService, private recordService: RecordService,
     private alertController: AlertController, private permissionService: PermissionService,
-    private pluginsService: PluginsService) {}
+    private pluginsService: PluginsService, private cdr: ChangeDetectorRef, private viewContainerRef: ViewContainerRef) {}
 
   ngOnInit() {}
 
   ngOnChanges(changes: SimpleChanges) {
-    if(!this.disabled && this.dataset_uuid) {
-      this.permissionService.hasPermission(this.dataset_uuid, 'edit').subscribe(result => {this.edit_permission = result as boolean;});
+
+    let loadGridstackItemsCallback = () => {
+      this.data_available = true;
+      this.cdr.detectChanges();
+      this.loadGridstackItems();
     }
+
     if ('form' in changes) {
+      if(this.name_field_form == undefined) {
+        // Get name from fields
+        if('fields' in this.form.value) {
+          for(let field_form of (this.form.get('fields') as FormArray).controls) {
+            if(field_form.value.name == 'name') {
+              this.name_field_form = field_form;
+              break;
+            }
+          }
+        }
+      }
+
       this.handleGraphPlugin();
+
+      if('combined_dataset_template' in this.form.value) {
+        if(!this.disabled && this.edit_permission === undefined && this.dataset_uuid) {
+          this.permissionService.hasPermission(this.dataset_uuid, 'edit').subscribe(result => {
+            this.edit_permission = result as boolean;
+            loadGridstackItemsCallback();
+          });
+        } else {
+          loadGridstackItemsCallback();
+        }
+      }
     }
   }
 
   private handleGraphPlugin(){
-    if(this.form && this.form.get('plugins') && 'graph' in this.form.get('plugins').value) { // initially setter gets called with undefined
+    if(this.form && this.form.get('plugins') && 'graph' in this.form.get('plugins')!.value) { // initially setter gets called with undefined
       let graph_plugin_element = this.graphPluginRef;
       if(!this.graphed) {
         // let file = 'assets/test/cma_404470826rda00790050104ch11503p1.csv';
@@ -90,6 +126,13 @@ export class RecordComponent implements OnInit, OnChanges {
 
   addRelatedRecord(dataset_uuid: string) {
     this.api.createRecord({dataset_uuid, related_records: []}).pipe(
+      catchError(error => {
+        if(error.status == 401) {
+          // Show a popup indicating that the user doesn't have permission to add this related record
+          this.presentAlert('You do not have permission to add a record to this dataset');
+        }
+        return throwError(() => error);
+      }),
       switchMap((response: any) => {
         let related_record_object = response.record;
         let form_fields_array = this._fb.array([]);
@@ -118,7 +161,7 @@ export class RecordComponent implements OnInit, OnChanges {
     this.records_available = false;
     this.records_to_link = [];
 
-    let observables = this.related_datasets.map((d: any) => this.api.datasetRecords(d.uuid).pipe(take(1)))
+    let observables = this.related_datasets.map((dataset_template: any) => this.api.datasetRecords(dataset_template.dataset_uuid).pipe(take(1)))
     forkJoin(observables).subscribe((results: any) => {
       // TODO: consider removing related_records already on the record
       this.records_to_link = results.flat(1);
@@ -141,17 +184,17 @@ export class RecordComponent implements OnInit, OnChanges {
         if(this.recordHasChild(uuid)) {
           return from(this.presentAlert('Cannot link the chosen record as it is already linked'));
         } else {
-          let dataset;
-          for(let related_dataset of this.related_datasets) {
-            if(related_record_object.dataset_uuid == related_dataset.uuid) {
-              dataset = related_dataset;
+          let dataset_template;
+          for(let related_dataset_template of this.related_datasets) {
+            if(related_record_object.dataset_uuid == related_dataset_template.dataset_uuid) {
+              dataset_template = related_dataset_template;
               break;
             }
           }
-          if(!dataset) {
+          if(!dataset_template) {
             throw new Error('Cannot find dataset for record ' + uuid)
           }
-          this.related_records_form_array.push(this.convertRecordObjectToForm(related_record_object, dataset, this.form.get('file_upload_progress_map')?.value));
+          this.related_records_form_array.push(this.convertRecordObjectToForm(related_record_object, dataset_template, this.form.get('file_upload_progress_map')?.value));
           return this.saveDraft();
         }
       })
@@ -178,35 +221,47 @@ export class RecordComponent implements OnInit, OnChanges {
 
   get uuid() { return this.form.get('uuid'); }
 
-  get dataset_uuid(): string {
-    return this.form.get('dataset_uuid')?.value;
-  }
+  get dataset_uuid(): string { return this.form.get('dataset_uuid')?.value; }
 
-  get dataset_name() { return this.form.get('dataset')?.value.name; }
+  private get combined_dataset_template() { return this.form.get('combined_dataset_template')?.value;}
 
-  get related_datasets(): any[] {
-    return this.form.get('dataset')?.value.related_datasets;
-  }
+  get name() { return this.name_field_form && this.name_field_form.value.value ? this.name_field_form.value.value : this.dataset_name; }
 
-  get may_edit() { return !this.disabled && this.edit_permission; }
+  get dataset_name() { return this.combined_dataset_template?.name; }
+
+  get related_datasets(): any[] { return this.combined_dataset_template?.related_datasets; }
+
+  get may_edit() { return !this.disabled && (this.edit_permission === undefined || this.edit_permission) }
+
+  get may_view() { return this.hasViewPermission }
 
   get record_private() {
     return this.form.get('public_date')
   }
 
   get public(): boolean {
-    return !!this.form.get('dataset')?.value.public_date && !this.record_private;
+    return !!this.combined_dataset_template.public_date && !this.record_private;
   }
 
   get hasViewPermission(): boolean {
     return !this.form.get('no_permissions');
   }
 
+  get top_grid_options(): NgGridStackOptions {
+    return static_top_grid_options;
+  }
+
+  private get grid() { return this.grid_comp?.grid; }
+
+  castToFormGroup(f: AbstractControl) {
+    return f as FormGroup;
+  }
+
   getRelatedDatasetForRelatedForm(form: any) {
     let dataset_uuid = form.get('dataset_uuid')?.value;
-    for(let related_dataset of this.related_datasets) {
-      if(related_dataset.uuid == dataset_uuid) {
-        return related_dataset;
+    for(let related_dataset_template of this.related_datasets) {
+      if(related_dataset_template.dataset_uuid == dataset_uuid) {
+        return related_dataset_template;
       }
     }
     throw "Related dataset not found";
@@ -259,11 +314,11 @@ export class RecordComponent implements OnInit, OnChanges {
           this.uploadAllFiles(file_uuid_map);
           return of(response.record);
         } else {
-          return this.api.fetchRecordLatestPersisted(this.uuid.value);
+          return this.api.fetchRecordLatestPersisted(this.uuid?.value);
         }
       }),
       switchMap((record: any) => {
-        let new_form = this.convertRecordObjectToForm(record, this.form.get('dataset')?.value, this.form.get('file_upload_progress_map')?.value);
+        let new_form = this.convertRecordObjectToForm(record, this.form.get('combined_dataset_template')?.value, this.form.get('file_upload_progress_map')?.value);
         this.copyNewFormToComponentForm(new_form);
         return of({});
       })
@@ -316,7 +371,10 @@ export class RecordComponent implements OnInit, OnChanges {
     return field;
   }
 
-  public convertRecordObjectToForm(record_object: any, dataset: any, file_upload_progress_map: Record<string, number>) {
+  public convertRecordObjectToForm(record_object: any, combined_dataset_template: any, file_upload_progress_map: Record<string, number>): FormGroup {
+    if(!combined_dataset_template) {
+      throw new Error('record-edit.convertRecordObjectToForm: combined_dataset_template is undefined');
+    }
     if(record_object.no_permissions) {
       // No view permissions
       return this._fb.group({
@@ -330,7 +388,7 @@ export class RecordComponent implements OnInit, OnChanges {
       dataset_uuid: record_object.dataset_uuid,
       fields: this._fb.array([]),
       related_records: this._fb.array([]),
-      dataset,
+      combined_dataset_template,
       file_upload_progress_map
     })
     if(record_object.public_date) {
@@ -338,11 +396,10 @@ export class RecordComponent implements OnInit, OnChanges {
     }
     if(record_object.fields) {
       for(let field of record_object.fields) {
-        let fields: FormArray = (form.get("fields") as FormArray);
         let new_field: FormGroup = this._fb.group({
-          uuid: new FormControl(field.uuid),
-          name: new FormControl(field.name),
-          description: new FormControl(field.description),
+          uuid: [field.uuid],
+          name: [field.name],
+          description: [field.description],
           value: [field.value ? field.value : "", {validators: [this.generateFieldValueValidator(field.plugins)]}]
         });
         if(field.type) {
@@ -358,16 +415,16 @@ export class RecordComponent implements OnInit, OnChanges {
         if(field.plugins) {
           new_field.addControl("plugins", new FormControl(field.plugins))
         }
-        fields.push(new_field);
+        form.get("fields").push(new_field);
       }
     }
     let dataset_map: any = {};
-    if(dataset.related_datasets) {
-      for(let related_dataset of dataset.related_datasets) {
-        dataset_map[related_dataset.uuid] = related_dataset;
+    if(combined_dataset_template && 'related_datasets' in combined_dataset_template) {
+      for(let related_dataset of combined_dataset_template.related_datasets) {
+        dataset_map[related_dataset.dataset_uuid] = related_dataset;
       }
     }
-    if(record_object.related_records) {
+    if(record_object && 'related_records' in record_object) {
       for(let related_record of record_object.related_records) {
         (form.get("related_records") as FormArray)
           .push(this.convertRecordObjectToForm(related_record, dataset_map[related_record.dataset_uuid], file_upload_progress_map));
@@ -401,7 +458,7 @@ export class RecordComponent implements OnInit, OnChanges {
     this.form.removeControl('related_records');
     this.form.addControl('related_records', new_form.get('related_records'));
 
-    this.form.controls['dataset'].setValue(new_form.get('dataset')?.value);
+    this.form.controls['combined_dataset_template'].setValue(new_form.get('combined_dataset_template')?.value);
   }
 
   public castControlToGroup(form: AbstractControl) {
@@ -474,5 +531,65 @@ export class RecordComponent implements OnInit, OnChanges {
       }
     }
     return graph_file;
+  }
+
+  private loadGridstackItems() {
+    this.grid?.removeAll();
+
+    this.grid?.batchUpdate();
+
+    let view_settings = (this.combined_dataset_template && 'view_settings' in this.combined_dataset_template) ? this.combined_dataset_template.view_settings : {};
+    let fields_grid = view_settings.fields_grid;
+    let field_uuids = this.form.value.fields.map((field: any) => field.uuid);
+    let field_uuids_not_in_grid = new Set(field_uuids);
+
+    if(fields_grid) {
+      for(let child of fields_grid.children) {
+        if(child.children) {
+          let grandchild_list = [];
+          for(let grandchild of child.children) {
+            let field_uuid = grandchild.uuid;
+            let field = this.appFieldSelectorFromUUID(field_uuid);
+            grandchild_list.push({x: grandchild.x, y: grandchild.y, w: grandchild.w, h: grandchild.h, el: field});
+            field_uuids_not_in_grid.delete(field_uuid);
+          }
+          this.grid?.addWidget({x: child.x, y: child.y, w: child.w, h: child.h, subGridOpts: {children: grandchild_list, ...static_sub_grid_options}});
+        } else {
+          let field_uuid = child.uuid;
+          let field = this.appFieldSelectorFromUUID(field_uuid);
+          this.grid?.addWidget(field, {x: child.x, y: child.y, w: child.w, h: child.h})
+          field_uuids_not_in_grid.delete(field_uuid);
+        }
+      }
+    }
+
+    for(let field_uuid of field_uuids_not_in_grid.values()) {
+      let field = this.appFieldSelectorFromUUID(field_uuid as string);
+      this.grid!.addWidget(field, {x:0, y: gridHeight(this.grid!)});
+    }
+
+    this.grid?.commit();
+  }
+
+  private appFieldSelectorFromUUID(uuid: string) {
+    const field_form = this.fieldFormFromUuid(uuid);
+    return this.appFieldSelectorFromForm(field_form);
+  }
+
+  private appFieldSelectorFromForm(form: FormGroup|undefined) {
+    const component = this.viewContainerRef.createComponent(FieldComponent);
+    component.setInput('form', form);
+    component.setInput('disabled', !this.may_edit);
+    component.setInput('record_uuid', this.uuid?.value);
+    return component.location.nativeElement;
+  }
+
+  private fieldFormFromUuid(uuid: string): FormGroup|undefined {
+    for(let field_form of (this.form.get('fields') as any).controls) {
+      if(field_form.get('uuid').value == uuid) {
+        return field_form;
+      }
+    }
+    return undefined;
   }
 }

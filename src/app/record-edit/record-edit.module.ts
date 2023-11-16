@@ -12,6 +12,8 @@ import { HeaderModule } from '../header/header.module';
 import { FieldComponent } from './field/field.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SharedModule } from '../shared/shared.module';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { GridstackModule } from 'gridstack/dist/angular';
 
 @NgModule({
   imports: [
@@ -22,7 +24,9 @@ import { SharedModule } from '../shared/shared.module';
     ReactiveFormsModule,
     HeaderModule,
     MatProgressSpinnerModule,
-    SharedModule
+    SharedModule,
+    NgbModule,
+    GridstackModule
   ],
   declarations: [RecordEditPage, RecordComponent, FieldComponent]
 })

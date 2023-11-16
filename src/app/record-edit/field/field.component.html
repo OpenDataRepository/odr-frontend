@@ -1,43 +1,90 @@
-<form class="ion-margin" [formGroup]="form" [ngClass]="{'gray-border': !may_edit, 'normal-border': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}">
-  <ion-item lines="inset">
-    <ion-label>uuid: {{ form.get('uuid')?.value }}</ion-label>
-  </ion-item>
-  <ion-item lines="inset">
-    <ion-label>Name: {{ form.get('name')?.value }}</ion-label>
-  </ion-item>
-  <ion-item lines="inset">
-    <ion-label>Description: {{ form.get('description')?.value }}</ion-label>
-  </ion-item>
-  <div *ngIf="!is_file">
-    <ion-item lines="inset">
-      <ion-label>Value:</ion-label>
-      <ion-input formControlName="value" [placeholder]="may_edit ? 'Enter value here...' : ''" [readonly]="!may_edit"></ion-input>
-      <ion-note slot="error" *ngIf="form.get('value').hasError('pluginError')">{{ form.get('value').getError('pluginError') }}</ion-note>
-    </ion-item>
-    <ion-item lines="inset" *ngIf="value_after_plugins">
-      <ion-label [innerHTML]="'Preview: ' + value_after_plugins | bypassDomSanitizer"></ion-label>
-    </ion-item>
-  </div>
-  <div *ngIf="is_file">
-    <ion-item lines="none">File:</ion-item>
-    <div class="ion-margin-start">
-      <ion-item *ngIf="file_name">
-        <ion-label>{{file_name}}</ion-label>
-        <ion-button (click)="downloadFile()"> Download </ion-button>
-      </ion-item>
-      <ion-item lines="none">
-        <ion-label *ngIf="file_name">Change file:</ion-label>
-        <ion-input type="file" (change)="onFileSelected($event)"> </ion-input>
-      </ion-item>
-      <div class="ion-margin-start" *ngIf="form.get('file_upload_progress_map') && file_upload_progress_map[file_uuid] && file_upload_progress_map[file_uuid] > 0">
-        <p>Upload progress:</p>
-        <mat-progress-spinner
-          class="example-margin"
-          color="primary"
-          mode="determinate"
-          [value]="file_upload_progress_map[file_uuid]"
-        ></mat-progress-spinner>
+<div style="width: 100%; height: 100%; background-color: white;"
+  [ngClass]="{'gray-border': !may_edit, 'normal-border-2': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}">
+  <form [formGroup]="form">
+    <ion-item lines="none">
+      <div *ngIf="may_view">
+        <ion-label>
+          <p><span style="color: blue;">{{ form.get('name')?.value}}</span></p>
+          <div *ngIf="!is_file">
+            <p *ngIf="!value_after_plugins">{{ form.get('value')?.value}}</p>
+            <p *ngIf="value_after_plugins" [innerHTML]="value_after_plugins | bypassDomSanitizer"></p>
+          </div>
+          <div *ngIf="is_file && file_name">
+            <p>{{file_name}}</p>
+            <ion-button *ngIf="file_uuid && file_uuid !== 'new'" (click)="downloadFile()"> Download </ion-button>
+          </div>
+        </ion-label>
       </div>
-    </div>
-  </div>
-</form>
+      <ion-label *ngIf="!may_view">
+        <p>Private Field</p>
+        <p>{{uuid?.value}}</p>
+      </ion-label>
+      <div slot="end" style="display: grid; margin-inline-start: 0px;">
+        <ion-button *ngIf="may_view" [attr.id]="'edit-field-' + record_uuid + '-' + uuid?.value">
+          <ion-icon *ngIf="may_edit" name="pencil-outline"></ion-icon>
+          <ion-icon *ngIf="!may_edit" name="eye-outline"></ion-icon>
+        </ion-button>
+        <ion-button *ngIf="!may_view" disabled="true"><ion-icon name="eye-off-outline"></ion-icon></ion-button>
+      </div>
+    </ion-item>
+  </form>
+</div>
+<!-- This is the edit/view modal -->
+<ion-modal *ngIf="may_view" #edit_field_modal [attr.trigger]="'edit-field-' + record_uuid + '-' + uuid?.value">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title *ngIf="may_edit">Edit Field</ion-title>
+        <ion-title *ngIf="!may_edit">View Field</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <div [ngClass]="{'gray-border': !may_edit, 'normal-border-2': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}">
+        <form [formGroup]="form">
+
+          <ion-item>
+            <ion-label>uuid: {{ uuid?.value }}</ion-label>
+          </ion-item>
+          <div *ngIf="may_view">
+
+            <ion-item>Name: {{form.get('name')?.value}}</ion-item>
+
+            <ion-item>Description: {{form.get('description')?.value}}</ion-item>
+
+            <div *ngIf="!is_file">
+              <ion-item>
+                <ion-input formControlName="value"
+                  [placeholder]="may_edit ? 'Enter value here...' : ''"
+                  [readonly]="!may_edit"
+                  label="Value:"
+                  [errorText]="form.get('value')?.getError('pluginError')">
+                </ion-input>
+              </ion-item>
+              <ion-item *ngIf="value_after_plugins">
+                <ion-label [innerHTML]="'Preview: ' + value_after_plugins | bypassDomSanitizer"></ion-label>
+              </ion-item>
+            </div>
+            <div *ngIf="is_file">
+              <ion-item *ngIf="file_name">
+                <ion-label>{{file_name}}</ion-label>
+                <ion-button *ngIf="file_uuid && file_uuid !== 'new'" (click)="downloadFile()"> Download </ion-button>
+              </ion-item>
+              <ion-item class="ion-margin-top">
+                <ion-input type="file" (change)="onFileSelected($event)"></ion-input>
+              </ion-item>
+              <div class="ion-margin-start" *ngIf="form.get('file_upload_progress_map') && file_upload_progress_map[file_uuid] && file_upload_progress_map[file_uuid] > 0">
+                <p>Upload progress:</p>
+                <mat-progress-spinner
+                  class="example-margin"
+                  color="primary"
+                  mode="determinate"
+                  [value]="file_upload_progress_map[file_uuid]"
+                ></mat-progress-spinner>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

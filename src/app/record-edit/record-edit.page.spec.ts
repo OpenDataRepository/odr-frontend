@@ -11,6 +11,7 @@ import { RecordComponent } from './record/record.component';
 import { RecordService } from '../api/record.service';
 import { PermissionService } from '../api/permission.service';
 import { PluginsService } from '../shared/plugins.service';
+import { NgbCollapseModule } from '@ng-bootstrap/ng-bootstrap';
 
 describe('RecordEditPage', () => {
   let component: RecordEditPage;
@@ -37,6 +38,23 @@ describe('RecordEditPage', () => {
         dataset_persist_date: (new Date()).toISOString(),
         fields: [],
         related_datasets: []
+      });
+    }
+
+    fetchTemplateVersion = () => {
+      return of({
+        uuid: "t_uuid",
+        _id: "t_id",
+        name: "name",
+        updated_at: (new Date()).toISOString(),
+        persist_date: (new Date()).toISOString(),
+        fields: [],
+        related_datasets: [],
+        view_settings: {
+          fields_grid: {
+            children: []
+          }
+        }
       });
     }
   }
@@ -95,7 +113,8 @@ describe('RecordEditPage', () => {
       ],
       imports: [
         IonicModule.forRoot(),
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        NgbCollapseModule
       ]
     }).compileComponents();
 

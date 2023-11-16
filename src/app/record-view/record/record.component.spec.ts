@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 import { PermissionService } from 'src/app/api/permission.service';
 import { ApiService } from 'src/app/api/api.service';
 import { PluginsService } from 'src/app/shared/plugins.service';
+import { NgbCollapseModule } from '@ng-bootstrap/ng-bootstrap';
 
 describe('RecordViewComponent', () => {
   let component: RecordComponent;
@@ -45,7 +46,8 @@ describe('RecordViewComponent', () => {
       ],
       imports: [
         IonicModule.forRoot(),
-        RouterModule
+        RouterModule,
+        NgbCollapseModule
       ]
     }).compileComponents();
 

@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, Input, OnInit, SimpleChanges, ViewChild, ViewContainerRef } from '@angular/core';
 import { GridstackComponent, NgGridStackOptions } from 'gridstack/dist/angular';
-import { default_base_grid_options, gridHeight } from 'src/app/shared/gridstack-settings';
+import { static_sub_grid_options, static_top_grid_options, gridHeight } from 'src/app/shared/gridstack-settings';
 import { FieldComponent } from '../field/field.component';
 
 @Component({
@@ -14,21 +14,6 @@ export class DatasetComponent implements OnInit {
   dataset: any = {};
 
   @ViewChild(GridstackComponent) grid_comp!: GridstackComponent;
-
-  private static base_grid_options : NgGridStackOptions = { // base grid options
-    acceptWidgets: false,
-    staticGrid: true,
-    ...default_base_grid_options
-  };
-  private static sub_grid_options : NgGridStackOptions = { // sub grid options
-    column: 'auto',
-    ...DatasetComponent.base_grid_options
-  };
-  top_grid_options : NgGridStackOptions = { // main grid options
-    column: 6,
-    subGridOpts: DatasetComponent.sub_grid_options,
-    ...DatasetComponent.base_grid_options
-  };
 
   private get persisted(): boolean {
     return !!this.dataset?.dataset_persist_date;
@@ -50,8 +35,8 @@ export class DatasetComponent implements OnInit {
     return this.grid_comp?.grid;
   }
 
-  objectKeys(options: any) {
-    return Object.keys(options);
+  get top_grid_options(): NgGridStackOptions {
+    return static_top_grid_options;
   }
 
   constructor(private viewContainerRef: ViewContainerRef, private cdr: ChangeDetectorRef) { }
@@ -86,7 +71,7 @@ export class DatasetComponent implements OnInit {
             grandchild_list.push({x: grandchild.x, y: grandchild.y, w: grandchild.w, h: grandchild.h, el: field});
             field_uuids_not_in_grid.delete(field_uuid);
           }
-          this.grid?.addWidget({x: child.x, y: child.y, w: child.w, h: child.h, subGridOpts: {children: grandchild_list, ...DatasetComponent .sub_grid_options}});
+          this.grid?.addWidget({x: child.x, y: child.y, w: child.w, h: child.h, subGridOpts: {children: grandchild_list, ...static_sub_grid_options}});
         } else {
           let field_uuid = child.uuid;
           let field = this.appFieldSelectorFromUUID(field_uuid);

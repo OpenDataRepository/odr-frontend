@@ -1,61 +1,42 @@
-<div class="ion-margin normal-border">
-  <ion-item lines="inset">
-    <ion-label>record uuid: {{ record.uuid }}</ion-label>
-    <ion-button *ngIf="private" slot="end" color="danger" disabled="true">Private</ion-button>
-  </ion-item>
-  <ion-item lines="inset">
-    <ion-label>dataset uuid: <a [routerLink]="['/dataset-records',record.dataset_uuid]">{{ record.dataset_uuid }}</a></ion-label>
-  </ion-item>
-  <div *ngIf="hasViewPermission">
-    <div *ngIf="this.persisted">
-      <ion-item lines="inset">
-        <ion-label>version id: {{ record._id }}</ion-label>
-      </ion-item>
-      <ion-item lines="inset">
-        <ion-label>version save date: {{ record.persist_date }}</ion-label>
-      </ion-item>
-    </div>
+<div [ngClass]="{'gray-border': !may_view, 'normal-border': may_view}">
 
-    <!-- TODO: handle private fields. Private fields should not show. Might need to handle in the backend -->
-    <div *ngIf="record?.fields && record?.fields.length > 0">
-      <ion-item lines="none">Fields:</ion-item>
-      <div class="ion-margin">
-        <div *ngFor="let f of record?.fields">
-          <div class="ion-margin normal-border">
-            <ion-item lines="inset">
-              <ion-label>field uuid: {{ f.uuid }}</ion-label>
-            </ion-item>
-            <ion-item lines="inset">
-              <ion-label>Name: {{ f.name }}</ion-label>
-            </ion-item>
-            <ion-item lines="inset">
-              <ion-label>Description: {{ f.description }}</ion-label>
-            </ion-item>
-            <ion-item lines="inset" *ngIf="!f.type || f.type !== 'File'">
-              <ion-label [innerHTML]="'Value: ' + f.value_after_plugins | bypassDomSanitizer"></ion-label>
-            </ion-item>
-            <div *ngIf="f.type && f.type === 'File'" class="ion-margin">
-              <ion-label>File:</ion-label>
-              <ion-item *ngIf="f.file && f.file.name">
-                <ion-label>{{f.file.name}}</ion-label>
-                <ion-button (click)="downloadFile(f.file.uuid, f.file.name)"> Download </ion-button>
-              </ion-item>
-            </div>
-          </div>
-        </div>
+  <ion-item color="primary">
+    <ion-label lines="none">{{name}}</ion-label>
+    <div slot="end">
+      <ion-button color="secondary" (click)="collapse.toggle()">+</ion-button>
+    </div>
+  </ion-item>
+
+  <div #collapse="ngbCollapse" (ngbCollapse)="true">
+
+    <ion-item *ngIf="!may_view">
+      <ion-label>uuid: {{ record.uuid }}</ion-label>
+    </ion-item>
+
+    <ion-item lines="none">
+      <ion-label><a [routerLink]="['/dataset-records',record.dataset_uuid]">view record's dataset</a></ion-label>
+    </ion-item>
+
+    <div *ngIf="may_view">
+
+      <!-- Note: this *ngIf is required because gridstack needs some time to be initialized I guess before it is added to the dom.
+           Waiting for the data to load is enough time -->
+      <div *ngIf="data_available" class="ion-padding">
+        <gridstack [options]="top_grid_options">
+          <div empty-content>Add items here or reload the grid</div>
+        </gridstack>
       </div>
-    </div>
 
-    <div #graph_plugin style="width:90%;height:250px;"></div>
+      <div #graph_plugin style="width:90%;height:250px;"></div>
 
-    <div *ngIf="record?.related_records && record?.related_records.length > 0">
-      <ion-item lines="none">Related Records:</ion-item>
-      <div class="ion-margin">
+      <div *ngIf="record?.related_records && record?.related_records.length > 0">
         <div *ngFor="let r of record?.related_records">
           <record-view [record]="r"></record-view>
         </div>
       </div>
+
     </div>
+
   </div>
 
 </div>

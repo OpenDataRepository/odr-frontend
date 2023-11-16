@@ -11,6 +11,9 @@ import { HeaderModule } from '../header/header.module';
 import { RecordComponent } from './record/record.component';
 import { ActivatedRoute } from '@angular/router';
 import { SharedModule } from '../shared/shared.module';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { GridstackModule } from 'gridstack/dist/angular';
+import { FieldComponent } from './field/field.component';
 
 @NgModule({
   imports: [
@@ -19,8 +22,10 @@ import { SharedModule } from '../shared/shared.module';
     IonicModule,
     RecordViewPageRoutingModule,
     HeaderModule,
-    SharedModule
+    SharedModule,
+    NgbModule,
+    GridstackModule
   ],
-  declarations: [RecordViewPage, RecordComponent]
+  declarations: [RecordViewPage, RecordComponent, FieldComponent]
 })
 export class RecordViewPageModule {}
