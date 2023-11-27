@@ -1,7 +1,7 @@
 <app-header></app-header>
 <ion-content>
   <div class="ion-margin">
-    <record-view [record]="record"></record-view>
+    <record-view [record]="record" *ngIf="show_record_component"></record-view>
   </div>
 </ion-content>
 

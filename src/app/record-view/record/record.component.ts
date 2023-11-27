@@ -104,7 +104,7 @@ export class RecordComponent implements OnInit, OnChanges {
         if(this.record.persist_date) {
           this.datasetService.fetchDatasetAndTemplateVersion(this.record.dataset_id).subscribe(callback);
         } else {
-          this.datasetService.fetchLatestDatasetAndTemplate(this.record.dataset_uuid).subscribe(callback);
+          this.datasetService.fetchLatestPersistedDatasetAndTemplate(this.record.dataset_uuid).subscribe(callback);
         }
 
       }
@@ -128,14 +128,18 @@ export class RecordComponent implements OnInit, OnChanges {
           for(let grandchild of child.children) {
             let field_uuid = grandchild.uuid;
             let field = this.appFieldSelectorFromUUID(field_uuid);
-            grandchild_list.push({x: grandchild.x, y: grandchild.y, w: grandchild.w, h: grandchild.h, el: field});
+            if(field) {
+              grandchild_list.push({x: grandchild.x, y: grandchild.y, w: grandchild.w, h: grandchild.h, el: field});
+            }
             field_uuids_not_in_grid.delete(field_uuid);
           }
           this.grid?.addWidget({x: child.x, y: child.y, w: child.w, h: child.h, subGridOpts: {children: grandchild_list, ...static_sub_grid_options}});
         } else {
           let field_uuid = child.uuid;
           let field = this.appFieldSelectorFromUUID(field_uuid);
-          this.grid?.addWidget(field, {x: child.x, y: child.y, w: child.w, h: child.h})
+          if(field) {
+            this.grid?.addWidget(field, {x: child.x, y: child.y, w: child.w, h: child.h});
+          }
           field_uuids_not_in_grid.delete(field_uuid);
         }
       }
@@ -143,7 +147,9 @@ export class RecordComponent implements OnInit, OnChanges {
 
     for(let field_uuid of field_uuids_not_in_grid.values()) {
       let field = this.appFieldSelectorFromUUID(field_uuid as string);
-      this.grid!.addWidget(field, {x:0, y: gridHeight(this.grid!)});
+      if(field) {
+        this.grid!.addWidget(field, {x:0, y: gridHeight(this.grid!)});
+      }
     }
 
     this.grid?.commit();
@@ -151,6 +157,9 @@ export class RecordComponent implements OnInit, OnChanges {
 
   private appFieldSelectorFromUUID(uuid: string) {
     const field = this.fieldFromUuid(uuid);
+    if(!field) {
+      return null;
+    }
     return this.appFieldSelectorFromField(field);
   }
 
@@ -166,7 +175,7 @@ export class RecordComponent implements OnInit, OnChanges {
         return field;
       }
     }
-    return undefined;
+    return null;
   }
 
   #applyPluginsToValues(record: any) {

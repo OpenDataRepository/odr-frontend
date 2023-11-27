@@ -18,6 +18,7 @@ export class RecordViewPage implements OnInit {
   record: any = {};
   has_persisted_version = false;
   has_edit_permission = false;
+  show_record_component = true;
 
   constructor(private route: ActivatedRoute, private router: Router,
     private recordService: RecordService, private api: ApiService,
@@ -40,6 +41,8 @@ export class RecordViewPage implements OnInit {
           if(result) {
             this.has_edit_permission = true;
           }
+          // Force the nested record component to rebuild from scratch
+          this.resetRecordComponent();
         })
       },
       error: (err: any) => {
@@ -89,5 +92,13 @@ export class RecordViewPage implements OnInit {
 
   private compareTime(a: string, b: string): boolean {
     return ((new Date(a)).getTime() - (new Date(b)).getTime()) > 0;
+  }
+
+  // Force the nested record component to rebuild from scratch. This is done by removing it and adding it back
+  private resetRecordComponent() {
+    this.show_record_component = false;
+    setTimeout(() => {
+      this.show_record_component = true;
+    }, 0);
   }
 }
