@@ -227,6 +227,8 @@ export class RecordComponent implements OnInit, OnChanges {
     // }
   }
 
+
+  // TODO: in dataset_edit, allow specifying which field should be used for the graph. This is a hack
   #findGraphFile() {
     let graph_file;
     for(let field of this.record.fields) {

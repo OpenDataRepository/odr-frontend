@@ -1,8 +1,8 @@
 {
   "name": "odr-frontend",
   "version": "0.0.1",
-  "author": "Ionic Framework",
-  "homepage": "https://ionicframework.com/",
+  "author": "Caleb Short",
+  "homepage": "https://github.com/OpenDataRepository/odr-frontend",
   "scripts": {
     "ng": "ng",
     "start": "http-server -p 8100 www",
@@ -76,7 +76,7 @@
     "ts-node": "~8.3.0",
     "typescript": "^5.1.6"
   },
-  "description": "An Ionic project",
+  "description": "The frontend for version 2.0 of Open Data Repository",
   "browser": {
     "fs": false,
     "path": false,
