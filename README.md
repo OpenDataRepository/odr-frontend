@@ -6,8 +6,8 @@ ODR is fundamentally a database web application allowing a user with no technica
 
 ## Back End 
 This repo is intended to be the front end to a web application for flexible data creation and management. 
-The back end which this repo is intended to use is https://github.com/OpenDataRepository/data-publisher-api
-The last commmit on the back-end which was tested somewhat extensively with this repo is commit 982d9aac23dfcde2d6bb8337686ebe12059c887f. 
+The back end which this repo is intended to use is https://github.com/OpenDataRepository/data-publisher-api.
+The last commit on the back-end which was tested somewhat extensively with this repo is commit 982d9aac23dfcde2d6bb8337686ebe12059c887f. 
 
 ## Quick Start
 
