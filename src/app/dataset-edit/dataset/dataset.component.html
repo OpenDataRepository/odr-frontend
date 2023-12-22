@@ -1,0 +1,194 @@
+<div [ngClass]="{'gray-border': !may_edit, 'normal-border': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}">
+  <form [formGroup]="form">
+    <ion-item color="primary">
+      <ion-input *ngIf="may_edit" formControlName="name" placeholder="Enter name here..."
+        [readonly]="!may_edit" errorText="Name is required">
+      </ion-input>
+      <ion-label *ngIf="!may_edit" lines="none">{{name?.value}}</ion-label>
+      <div slot="end">
+        <ion-button *ngIf="public_date" slot="end" color="success" (click)="makePrivate()" [disabled]="!may_edit">Public</ion-button>
+        <ion-button *ngIf="!public_date" slot="end" color="danger" (click)="makePublic()" [disabled]="!may_edit">Private</ion-button>
+        <ion-button color="secondary" (click)="collapse.toggle()">+</ion-button>
+      </div>
+    </ion-item>
+    <div #collapse="ngbCollapse" (ngbCollapse)="true">
+      <div *ngIf="may_view">
+
+        <ion-toolbar *ngIf="may_edit">
+          <ion-grid>
+            <ion-row class="ion-text-center">
+              <ion-col>
+                <ion-button id="add_field" expand="block" (click)="newField()">New Field</ion-button>
+              </ion-col>
+              <ion-col>
+                <ion-button expand="block" [attr.id]="'link-existing-field-' + uuid?.value" (click)="loadFieldsAvailableToLink()">
+                  Add Existing Field
+                </ion-button>
+              </ion-col>
+              <ion-col>
+                <ion-button id="add_field_group" expand="block" (click)="newFieldGroup()">New Field Group</ion-button>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-toolbar>
+
+        <ion-modal *ngIf="may_edit" #link_field_modal [attr.trigger]="'link-existing-field-' + uuid?.value">
+          <ng-template>
+            <ion-header>
+              <ion-toolbar>
+                <ion-buttons slot="start">
+                  <ion-button (click)="cancelLinkFieldModal()">Cancel</ion-button>
+                </ion-buttons>
+                <ion-title>Select a field to link</ion-title>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content class="ion-padding">
+              <div>
+                <ion-item>
+                  <ion-label><b>User Fields</b></ion-label>
+                </ion-item>
+                <ion-item *ngIf="!user_fields_loaded">
+                  <ion-spinner></ion-spinner>
+                </ion-item>
+                <ion-list *ngIf="user_fields_loaded">
+                  <ion-item *ngFor="let field of user_fields_to_link"
+                  [button]="true" [detail]="false" (click)="confirmLinkFieldModal(field.uuid)"
+                  >{{ field.name }}  ({{ field.uuid }})</ion-item>
+                </ion-list>
+                <ion-item>
+                  <ion-label><b>Public Fields</b></ion-label>
+                </ion-item>
+                <ion-item *ngIf="!public_fields_loaded">
+                  <ion-spinner></ion-spinner>
+                </ion-item>
+                <ion-list *ngIf="public_fields_loaded">
+                  <ion-item *ngFor="let field of public_fields_to_link"
+                  [button]="true" [detail]="false" (click)="confirmLinkFieldModal(field.uuid)"
+                  >{{ field.name }} ({{ field.uuid }})</ion-item>
+                </ion-list>
+              </div>
+            </ion-content>
+          </ng-template>
+        </ion-modal>
+
+        <div class="ion-padding">
+          <ng-container #grid_container></ng-container>
+        </div>
+
+        <ion-item lines="none">Plugins: </ion-item>
+        <div *ngFor="let plugin_name of current_plugin_keys"
+          class="ion-margin"
+          [ngClass]="{'gray-border': !may_edit, 'normal-border': may_edit}"
+        >
+          <ion-item><ion-label>Name: {{plugin_name}}</ion-label></ion-item>
+          <ion-item lines="inset">
+            <ion-label>Version: </ion-label>
+            <ion-select
+              (ionChange)="changePluginVersion(plugin_name, $event)"
+              [value]="getExistingPluginVersionOrLatest(plugin_name)"
+            >
+              <ion-select-option *ngFor="let version of all_object_plugins[plugin_name]" [value]="version">v{{version}}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item><ion-button color="danger" (click)="removePlugin(plugin_name)">Remove Plugin</ion-button></ion-item>
+        </div>
+        <div *ngIf="may_edit">
+          <ion-item  lines="none">
+            <ion-button [attr.id]="'add-plugin-' + uuid?.value">
+              Add Plugin
+            </ion-button>
+          </ion-item>
+          <ion-modal #add_plugin_modal [attr.trigger]="'add-plugin-' + uuid?.value">
+            <ng-template>
+              <ion-header>
+                <ion-toolbar>
+                  <ion-buttons slot="start">
+                    <ion-button (click)="cancelAddPluginModal()">Cancel</ion-button>
+                  </ion-buttons>
+                  <ion-title>Select a plugin to add</ion-title>
+                </ion-toolbar>
+              </ion-header>
+              <ion-content class="ion-padding">
+                <div>
+                  <ion-item>
+                    <ion-label><b>Plugins:</b></ion-label>
+                  </ion-item>
+                  <ion-list>
+                    <ion-item *ngFor="let plugin_name of all_object_plugin_keys" [detail]="false"
+                      button (click)="confirmAddPluginModal(plugin_name)"
+                    >
+                      <ion-label>{{ plugin_name }}</ion-label>
+                    </ion-item>
+                  </ion-list>
+                </div>
+              </ion-content>
+            </ng-template>
+          </ion-modal>
+        </div>
+
+        <ion-item lines="none">Related Datasets:</ion-item>
+        <div formArrayName="related_datasets">
+          <div *ngFor="let f of related_datasets_form_array?.controls; index as i">
+            <dataset-edit
+                [form]="castToFormGroup(f)"
+                (remove)="deleteRelatedDataset(i)"
+                [disabled]="!may_edit">
+            </dataset-edit>
+          </div>
+          <div *ngIf="may_edit">
+            <ion-item lines="none">
+              <ion-button id="add_related_dataset" (click)="addRelatedDataset()">New Dataset</ion-button>
+              <ion-button [attr.id]="'link-existing-dataset-' + uuid?.value"
+                (click)="loadDatasetsAvailableToLink()">
+                Link Existing Dataset
+              </ion-button>
+            </ion-item>
+            <ion-modal #link_dataset_modal [attr.trigger]="'link-existing-dataset-' + uuid?.value">
+              <ng-template>
+                <ion-header>
+                  <ion-toolbar>
+                    <ion-buttons slot="start">
+                      <ion-button (click)="cancelLinkDatasetModal()">Cancel</ion-button>
+                    </ion-buttons>
+                    <ion-title>Select a dataset to link</ion-title>
+                  </ion-toolbar>
+                </ion-header>
+                <ion-content class="ion-padding">
+                  <div>
+                    <ion-item>
+                      <ion-label><b>User Datasets</b></ion-label>
+                    </ion-item>
+                    <ion-item *ngIf="!user_datasets_loaded">
+                      <ion-spinner></ion-spinner>
+                    </ion-item>
+                    <ion-list *ngIf="user_datasets_loaded">
+                      <ion-item *ngFor="let dataset of user_datasets_to_link"
+                      [button]="true" [detail]="false" (click)="confirmLinkDatasetModal(dataset.uuid)"
+                      >{{ dataset.name }}  ({{ dataset.uuid }})</ion-item>
+                    </ion-list>
+                    <ion-item>
+                      <ion-label><b>Public Datasets</b></ion-label>
+                    </ion-item>
+                    <ion-item *ngIf="!public_datasets_loaded">
+                      <ion-spinner></ion-spinner>
+                    </ion-item>
+                    <ion-list *ngIf="public_datasets_loaded">
+                      <ion-item *ngFor="let dataset of public_datasets_to_link"
+                      [button]="true" [detail]="false" (click)="confirmLinkDatasetModal(dataset.uuid)"
+                      >{{ dataset.name }} ({{ dataset.uuid }})</ion-item>
+                    </ion-list>
+                  </div>
+                </ion-content>
+              </ng-template>
+            </ion-modal>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ion-item *ngIf="!is_top_level_dataset && !disabled">
+      <ion-button (click)="remove.emit()" color="danger">Remove Dataset</ion-button>
+    </ion-item>
+
+  </form>
+</div>

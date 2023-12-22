@@ -1,0 +1,44 @@
+<app-header></app-header>
+
+<div class="sticky-header">
+  <ion-grid>
+    <ion-row>
+      <!-- <ion-col size="6">-->
+      <ion-col>
+        <div class="sidebar">
+          <!-- will size to match content -->
+          <div class="grid-stack-item">
+            <div class="grid-stack-item-content">New field</div>
+          </div>
+          <div class="grid-stack-item">
+            <div class="grid-stack-item-content">New Field Group</div>
+          </div>
+        </div>
+      </ion-col>
+      <!-- <ion-col size="6">
+        <div class="trash" id="trash"></div>
+      </ion-col> -->
+    </ion-row>
+  </ion-grid>
+</div>
+
+<ion-content>
+  <div class="ion-margin">
+    <dataset-edit [is_top_level_dataset]="true" [form]="form"></dataset-edit>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-grid>
+      <ion-row class="ion-text-center">
+        <ion-col on-mouseover='displayFormProblems()'>
+          <ion-button expand="block" (click)="saveDraft()" [disabled]="!dataset_component.form.valid">Save Draft</ion-button>
+        </ion-col>
+        <ion-col>
+          <ion-button expand="block" color="danger" (click)="exitEditMode()">Exit Edit Mode</ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </ion-toolbar>
+</ion-footer>

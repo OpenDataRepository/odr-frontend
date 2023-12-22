@@ -1,0 +1,64 @@
+<app-header></app-header>
+
+<ion-content>
+
+  <div *ngIf="isLoggedIn">
+    <ion-item lines="none">
+      <ion-label><b>My Datasets</b></ion-label>
+    </ion-item>
+    <ion-item lines="none">
+      <ion-button routerLink="/dataset-edit/new">New Dataset</ion-button>
+    </ion-item>
+    <ion-grid class="ion-no-padding" class="ion-padding-end">
+      <ion-row *ngFor="let dataset of user_datasets; let i = index">
+        <ion-col>
+          <ion-item>
+            <ion-label>
+              <p>{{dataset.name}}</p>
+              <p>{{dataset.uuid}}</p>
+            </ion-label>
+          </ion-item>
+        </ion-col>
+        <ion-col size="2">
+          <ion-button expand="block" [routerLink]="['/dataset-view', dataset.uuid]">View</ion-button>
+        </ion-col>
+        <ion-col size="2">
+          <ion-button expand="block" color="danger" (click)="deleteDraft(i)" [disabled]="dataset.persist_date">Delete Draft</ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+    <!-- <ion-list>
+      <ion-item *ngFor="let dataset of datasets; let i = index">
+        <ion-label>
+          <p>{{dataset.name}}</p>
+          <p>{{dataset.uuid}}</p>
+        </ion-label>
+        <ion-button slot="end" color="danger" (click)="deleteDraft(i)" [disabled]="dataset.persist_date">Delete Draft</ion-button>
+      </ion-item>
+    </ion-list> -->
+  </div>
+
+  <div>
+    <ion-item lines="none">
+      <ion-label><b>Public Datasets</b></ion-label>
+    </ion-item>
+    <ion-item lines="none">
+      <ion-button>Search Public Datasets</ion-button>
+    </ion-item>
+    <ion-grid *ngIf="public_datasets" class="ion-no-padding" class="ion-padding-end">
+      <ion-row *ngFor="let dataset of public_datasets; let i = index">
+        <ion-col>
+          <ion-item>
+            <ion-label>
+              <p>{{dataset.name}}</p>
+              <p>{{dataset.uuid}}</p>
+            </ion-label>
+          </ion-item>
+        </ion-col>
+        <ion-col size="2">
+          <ion-button expand="block" [routerLink]="['/dataset-view', dataset.uuid]">View</ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
+</ion-content>

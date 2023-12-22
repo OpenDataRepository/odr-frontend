@@ -1,0 +1,42 @@
+<div [ngClass]="{'gray-border': !may_view, 'normal-border': may_view}">
+
+  <ion-item color="primary">
+    <ion-label lines="none">{{name}}</ion-label>
+    <div slot="end">
+      <ion-button color="secondary" (click)="collapse.toggle()">+</ion-button>
+    </div>
+  </ion-item>
+
+  <div #collapse="ngbCollapse" (ngbCollapse)="true">
+
+    <ion-item *ngIf="!may_view">
+      <ion-label>uuid: {{ record.uuid }}</ion-label>
+    </ion-item>
+
+    <ion-item lines="none">
+      <ion-label><a [routerLink]="['/dataset-records',record.dataset_uuid]">view record's dataset</a></ion-label>
+    </ion-item>
+
+    <div *ngIf="may_view">
+
+      <!-- Note: this *ngIf is required because gridstack needs some time to be initialized I guess before it is added to the dom.
+           Waiting for the data to load is enough time -->
+      <div *ngIf="data_available" class="ion-padding">
+        <gridstack [options]="top_grid_options">
+          <div empty-content>Add items here or reload the grid</div>
+        </gridstack>
+      </div>
+
+      <div #graph_plugin style="width:90%;height:250px;"></div>
+
+      <div *ngIf="record?.related_records && record?.related_records.length > 0">
+        <div *ngFor="let r of record?.related_records">
+          <record-view [record]="r"></record-view>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

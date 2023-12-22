@@ -1,0 +1,22 @@
+<!-- TODO: handle private fields. Private fields should not show. Should be handled by the back-end -->
+<div style="width: 100%; height: 100%; background-color: white;">
+  <ion-item lines="none">
+    <div *ngIf="may_view">
+      <ion-label>
+        <p><span style="color: blue;">{{ field.name.length > 0 ? field.name : "no name yet" }}</span></p>
+        <p *ngIf="!field.type || field.type !== 'File'" [innerHTML]="field.value_after_plugins | bypassDomSanitizer"></p>
+        <div *ngIf="field.type && field.type === 'File' && field.file && field.file.name">
+          <p>{{field.file.name}}</p>
+        </div>
+      </ion-label>
+      <ion-button *ngIf="field.type && field.type === 'File' && field.file && field.file.name"
+        (click)="downloadFile(field.file.uuid, field.file.name)">
+        Download
+      </ion-button>
+    </div>
+    <ion-label *ngIf="!may_view">
+      <p>Private Field</p>
+      <p>{{field?.uuid}}</p>
+    </ion-label>
+  </ion-item>
+</div>

@@ -1,0 +1,67 @@
+<div
+  style="width: 100%; height: 100%; background-color: white;">
+  <ion-item lines="none">
+    <ion-label *ngIf="may_view">
+      <p><span style="color: blue;">{{ field.name.length > 0 ? field.name : "no name yet" }}</span></p>
+      <p>Value Preview...</p>
+    </ion-label>
+    <ion-label *ngIf="!may_view">
+      <p>Private Field</p>
+      <p>{{field.uuid}}</p>
+    </ion-label>
+    <div slot="end" style="display: grid; margin-inline-start: 0px;">
+      <ion-button *ngIf="may_view" [attr.id]="'view-field-' + template_uuid + '-' + field.uuid"><ion-icon name="eye-outline"></ion-icon></ion-button>
+      <ion-button *ngIf="!may_view" disabled="true"><ion-icon name="eye-off-outline"></ion-icon></ion-button>
+    </div>
+  </ion-item>
+</div>
+
+<!-- This is the edit/view modal -->
+<ion-modal *ngIf="may_view" #view_field_modal [attr.trigger]="'view-field-' + template_uuid + '-' + field.uuid">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title >View Field</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <div [ngClass]="{'gray-border': !may_view, 'normal-border': may_view}">
+        <ion-item>
+          <ion-label>uuid: {{ field.uuid }}</ion-label>
+          <ion-button *ngIf="public" slot="end" color="success" [disabled]="true">Public</ion-button>
+          <ion-button *ngIf="!public" slot="end" color="danger" [disabled]="true">Private</ion-button>
+        </ion-item>
+        <div *ngIf="may_view">
+          <ion-item>
+            <ion-label>Name: {{field.name}}</ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-label>Description: {{field.description}}</ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-label>Field Type: {{ field.type }}</ion-label>
+          </ion-item>
+
+          <ion-item lines="none">Plugins: </ion-item>
+          <div *ngFor="let plugin_name of field.plugins.keys"
+            class="ion-margin"
+            [ngClass]="{'gray-border': !may_view, 'normal-border': may_view}"
+          >
+            <ion-item><ion-label>Name: {{plugin_name}}</ion-label></ion-item>
+            <ion-item><ion-label>Version: {{field.plugins.get(plugin_name).version}}</ion-label></ion-item>
+            <div *ngIf="field.plugins.get(plugin_name).options">
+              <ion-item>
+                <ion-label>Plugin options:</ion-label>
+              </ion-item>
+              <ion-list class="ion-margin">
+                <ion-item *ngFor="let key of objectKeys(field.plugins.get(plugin_name).options)">
+                  <ion-label>{{key}}: {{field.plugins.get(plugin_name).options[key]}}</ion-label>
+                </ion-item>
+              </ion-list>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

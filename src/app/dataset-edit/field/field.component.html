@@ -1,0 +1,148 @@
+<!-- TODO: Resolve this next. This is more complicated now, since plugins exist on the template, not on the field.
+Even if the user doesn't have edit access to the field, they can still edit plugins if they have edit access to the template. -->
+
+<!-- This is the preview of how it will will on the record, and the default of how it appears unless the user selects edit -->
+<div
+  style="width: 100%; height: 100%; background-color: white;"
+  [ngClass]="{'gray-border': !may_edit, 'normal-border-2': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}">
+  <ion-item lines="none">
+    <ion-label *ngIf="may_view">
+      <p><span style="color: blue;">{{ name?.value?.length > 0 ? name?.value : "no name yet" }}</span></p>
+      <!-- <p>{{ description?.value.length > 0 ? description?.value : "no description yet" }}</p> -->
+      <p>Value Preview...</p>
+    </ion-label>
+    <ion-label *ngIf="!may_view">
+      <p>Private Field</p>
+      <p>{{uuid?.value}}</p>
+    </ion-label>
+    <div slot="end" style="display: grid; margin-inline-start: 0px;">
+      <ion-button *ngIf="may_view" [attr.id]="'edit-field-' + template_uuid + '-' + uuid?.value">
+        <ion-icon *ngIf="may_edit" name="pencil-outline"></ion-icon>
+        <ion-icon *ngIf="!may_edit" name="eye-outline"></ion-icon>
+      </ion-button>
+      <ion-button *ngIf="!may_view" disabled="true"><ion-icon name="eye-off-outline"></ion-icon></ion-button>
+      <ion-button *ngIf="!disabled" (click)="remove.emit()" color="danger"><ion-icon name="trash-outline"></ion-icon></ion-button>
+    </div>
+  </ion-item>
+</div>
+
+<!-- This is the edit/view modal -->
+<ion-modal *ngIf="may_view" #edit_field_modal [attr.trigger]="'edit-field-' + template_uuid + '-' + uuid?.value">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title *ngIf="may_edit">Edit Field</ion-title>
+        <ion-title *ngIf="!may_edit">View Field</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <div [ngClass]="{'gray-border': !may_edit, 'normal-border-2': may_edit && form.valid, 'invalid-border': may_edit && !form.valid}">
+        <form [formGroup]="form">
+
+          <ion-item>
+            <ion-label>uuid: {{ uuid?.value }}</ion-label>
+            <ion-button *ngIf="public_date" slot="end" color="success" (click)="makePrivate()" [disabled]="!may_edit">Public</ion-button>
+            <ion-button *ngIf="!public_date" slot="end" color="danger" (click)="makePublic()" [disabled]="!may_edit">Private</ion-button>
+          </ion-item>
+          <!-- TODO: I don't remember this logic. shouldn't this just be updated_at? If you have permission to updated_at you can view -->
+          <div *ngIf="!uuid || public_date || updated_at">
+
+            <ion-item lines="none" *ngIf="may_edit">
+              <ion-input
+                label="Name:"
+                formControlName="name"
+                [placeholder]="'Enter name here...'"
+                errorText="Name is required">
+              </ion-input>
+            </ion-item>
+            <ion-item *ngIf="!may_edit">Name: {{name?.value}}</ion-item>
+
+            <ion-item>
+              <ion-input
+                label="Description:"
+                formControlName="description"
+                [placeholder]="may_edit ? 'Enter description here...' : ''"
+                [readonly]="!may_edit">
+              </ion-input>
+            </ion-item>
+
+            <ion-item *ngIf="may_edit">
+              <ion-select label="Field Type" formControlName="type" value="none">
+                <ion-select-option value="none">None (text)</ion-select-option>
+                <ion-select-option value="File">File</ion-select-option>
+              </ion-select>
+            </ion-item>
+            <ion-item *ngIf="!may_edit">Field Type: {{ type!.value }}</ion-item>
+
+            <div *ngIf="!!uuid">
+              <ion-item lines="none">Plugins: </ion-item>
+              <div *ngFor="let plugin_name of current_plugin_keys"
+                class="ion-margin"
+                [ngClass]="{'gray-border': !may_edit, 'normal-border': may_edit}"
+              >
+                <ion-item><ion-label>Name: {{plugin_name}}</ion-label></ion-item>
+                <ion-item lines="inset">
+                  <ion-select
+                    label="Version: "
+                    (ionChange)="changePluginVersion(plugin_name, $event)"
+                    [value]="getExistingPluginVersionOrLatest(plugin_name)"
+                  >
+                    <ion-select-option *ngFor="let version of all_field_plugins[plugin_name]" [value]="version">v{{version}}</ion-select-option>
+                  </ion-select>
+                </ion-item>
+                <div *ngIf="getPluginOptions(plugin_name)">
+                  <ion-item lines="inset">
+                    <ion-label>Plugin options:</ion-label>
+                  </ion-item>
+                  <ion-list class="ion-margin">
+                    <ion-item lines="inset" *ngFor="let plugin_option_name of getPluginOptionKeys(plugin_name)" [detail]="false">
+                      <ion-select
+                        [label]="plugin_option_name"
+                        (ionChange)="changePluginOption(plugin_name, plugin_option_name, $event)"
+                        [value]="getExistingPluginOption(plugin_name, plugin_option_name)"
+                      >
+                        <ion-select-option *ngFor="let option of safeGetPluginOptions(plugin_name)[plugin_option_name]" [value]="option">{{option}}</ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                  </ion-list>
+                </div>
+                <ion-item><ion-button color="danger" (click)="removePlugin(plugin_name)">Remove Plugin</ion-button></ion-item>
+              </div>
+              <div *ngIf="may_edit && !!uuid">
+                <ion-item lines="none">
+                  <ion-button [attr.id]="'add-plugin-' + template_uuid + '-' + uuid.value">Add Plugin</ion-button>
+                </ion-item>
+                <ion-modal #add_plugin_modal [attr.trigger]="'add-plugin-' + template_uuid + '-' + uuid.value">
+                  <ng-template>
+                    <ion-header>
+                      <ion-toolbar>
+                        <ion-buttons slot="start">
+                          <ion-button (click)="add_plugin_modal.dismiss()">Cancel</ion-button>
+                        </ion-buttons>
+                        <ion-title>Select a plugin to add</ion-title>
+                      </ion-toolbar>
+                    </ion-header>
+                    <ion-content class="ion-padding">
+                      <div>
+                        <ion-item>
+                          <ion-label><b>Plugins:</b></ion-label>
+                        </ion-item>
+                        <ion-list>
+                          <ion-item *ngFor="let plugin_name of all_field_plugin_keys" [detail]="false"
+                            button (click)="confirmAddPluginModal(plugin_name)"
+                          >
+                            <ion-label>{{ plugin_name }}</ion-label>
+                          </ion-item>
+                        </ion-list>
+                      </div>
+                    </ion-content>
+                  </ng-template>
+                </ion-modal>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

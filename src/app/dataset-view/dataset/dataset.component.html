@@ -1,0 +1,34 @@
+<div [ngClass]="{'gray-border': !may_view, 'normal-border': may_view}">
+
+  <ion-item color="primary">
+    <ion-label lines="none">{{dataset.name}}</ion-label>
+    <div slot="end">
+      <ion-button *ngIf="public" slot="end" color="success" [disabled]="true">Public</ion-button>
+      <ion-button *ngIf="!public" slot="end" color="danger" [disabled]="true">Private</ion-button>
+      <ion-button color="secondary" (click)="collapse.toggle()">+</ion-button>
+    </div>
+  </ion-item>
+
+  <div #collapse="ngbCollapse" (ngbCollapse)="true">
+
+    <ion-item *ngIf="!may_view">
+      <ion-label>uuid: {{ dataset.dataset_uuid }}</ion-label>
+    </ion-item>
+
+    <div *ngIf="may_view">
+
+      <div class="ion-padding">
+        <gridstack [options]="top_grid_options">
+          <div empty-content>Add items here or reload the grid</div>
+        </gridstack>
+      </div>
+
+      <div *ngFor="let d of dataset?.related_datasets">
+        <dataset-view [dataset]="d"></dataset-view>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

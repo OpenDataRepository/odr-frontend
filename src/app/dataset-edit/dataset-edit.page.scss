@@ -1,0 +1,11 @@
+.sticky-header {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 56px;  // Assuming your main header is 56px tall (default for Ionic). Adjust if necessary.
+  // z-index: 1;  // Ensure it's above other content but below the main header's toolbar.
+
+  // Other styling as needed:
+  background-color: #f9f9f9;
+  padding: 10px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
